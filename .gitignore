@@ -1,0 +1,30 @@
+# ---  ---
+node_modules/
+.DS_Store
+.env
+.env.*
+!.env.example
+# --- Next.js / Frontend ---
+web/.next/
+web/out/
+web/build/
+/.next/
+/out/
+/build/
+*.tsbuildinfo
+# --- Anchor / Rust ---
+anchor_program/target/
+anchor_program/.anchor/
+anchor_program/test-ledger/
+anchor_program/.surfpool/
+anchor_program/**/*.rs.bk
+# --- JavaScript Package Managers ---
+.yarn/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+# --- Coverage ---
+coverage/
+web/coverage/
+anchor_program/coverage/
