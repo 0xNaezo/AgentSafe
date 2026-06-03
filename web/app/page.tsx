@@ -5,27 +5,25 @@ import {
   CheckCircle2,
   CircleDollarSign,
   Clock3,
+  Copy,
   LockKeyhole,
-  Pause,
   ShieldCheck,
   SlidersHorizontal,
   TriangleAlert,
-  Wallet,
-  XCircle,
 } from "lucide-react";
+import { AppShell } from "./components/app-shell";
 
 const policyRules = [
-  { label: "Single payment cap", value: "250 USDC", state: "Active" },
   { label: "Daily spend limit", value: "900 USDC", state: "Active" },
   { label: "Manual review over", value: "150 USDC", state: "Review" },
   { label: "Vault token", value: "USDC", state: "Locked" },
+  { label: "Agent signature", value: "3c4F...8b92", state: "Required" },
 ];
 
-const recipients = [
-  { name: "OpenAI API", address: "7h2k...A91p", status: "Whitelisted" },
-  { name: "Cloud GPU Pool", address: "Hk31...m2Ls", status: "Whitelisted" },
-  { name: "Unknown wallet", address: "9zzQ...x001", status: "Blocked" },
-];
+const dailySpend = {
+  current: 312,
+  limit: 900,
+};
 
 const activity = [
   {
@@ -42,43 +40,11 @@ const activity = [
     icon: Clock3,
     tone: "text-amber-700 bg-amber-50 border-amber-100",
   },
-  {
-    title: "Payment blocked",
-    detail: "Unknown wallet failed recipient whitelist policy",
-    time: "31 min ago",
-    icon: XCircle,
-    tone: "text-rose-700 bg-rose-50 border-rose-100",
-  },
 ];
 
 export default function Home() {
   return (
-    <main className="min-h-screen bg-[#f7f8fb] text-slate-950">
-      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
-        <header className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 pb-4">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-white shadow-sm">
-              <ShieldCheck size={22} aria-hidden="true" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">AgentSafe</p>
-              <h1 className="text-xl font-semibold tracking-normal text-slate-950">
-                Policy Vault Dashboard
-              </h1>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <button className="inline-flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50" aria-label="Pause vault">
-              <Pause size={18} aria-hidden="true" />
-            </button>
-            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800">
-              <Wallet size={18} aria-hidden="true" />
-              Connect wallet
-            </button>
-          </div>
-        </header>
-
+    <AppShell activeHref="/" title="Policy Vault Dashboard">
         <section className="grid gap-4 py-5 lg:grid-cols-[1.15fr_0.85fr]">
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-4">
@@ -99,19 +65,33 @@ export default function Home() {
 
             <div className="mt-6 grid gap-3 sm:grid-cols-3">
               <Metric icon={Bot} label="Agent wallet" value="3c4F...8b92" />
-              <Metric icon={CircleDollarSign} label="Spent today" value="312 USDC" />
+              <DailySpendMetric current={dailySpend.current} limit={dailySpend.limit} />
               <Metric icon={Activity} label="Pending review" value="1 request" />
             </div>
 
-            <div className="mt-6 flex flex-wrap gap-2">
-              <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
-                <CircleDollarSign size={17} aria-hidden="true" />
-                Deposit
-              </button>
-              <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
-                <SlidersHorizontal size={17} aria-hidden="true" />
-                Edit policy
-              </button>
+            <div className="mt-6 flex flex-wrap items-end justify-between gap-3">
+              <div className="flex flex-wrap gap-2">
+                <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
+                  <CircleDollarSign size={17} aria-hidden="true" />
+                  Deposit
+                </button>
+                <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
+                  <SlidersHorizontal size={17} aria-hidden="true" />
+                  Edit policy
+                </button>
+              </div>
+              <div className="flex w-fit max-w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm sm:ml-auto">
+                <span className="font-medium text-slate-500">Vault Address:</span>
+                <span className="font-mono font-semibold text-slate-950">4k3...x92</span>
+                <button
+                  className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+                  type="button"
+                  aria-label="Copy vault address"
+                  title="Copy vault address"
+                >
+                  <Copy size={15} aria-hidden="true" />
+                </button>
+              </div>
             </div>
           </div>
 
@@ -204,32 +184,7 @@ export default function Home() {
           </div>
         </section>
 
-        <section className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3">
-            <div>
-              <p className="text-sm font-medium text-slate-500">Recipients</p>
-              <h2 className="mt-1 text-lg font-semibold text-slate-950">Payment allowlist</h2>
-            </div>
-            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50">
-              <SlidersHorizontal size={17} aria-hidden="true" />
-              Manage
-            </button>
-          </div>
-
-          <div className="mt-5 overflow-hidden rounded-lg border border-slate-200">
-            {recipients.map((recipient) => (
-              <div key={recipient.address} className="grid gap-2 border-b border-slate-100 px-4 py-3 last:border-b-0 sm:grid-cols-[1fr_1fr_auto] sm:items-center">
-                <p className="font-semibold text-slate-950">{recipient.name}</p>
-                <p className="font-mono text-sm text-slate-500">{recipient.address}</p>
-                <span className={`w-fit rounded-md border px-2 py-1 text-xs font-semibold ${recipient.status === "Blocked" ? "border-rose-100 bg-rose-50 text-rose-700" : "border-emerald-100 bg-emerald-50 text-emerald-700"}`}>
-                  {recipient.status}
-                </span>
-              </div>
-            ))}
-          </div>
-        </section>
-      </div>
-    </main>
+    </AppShell>
   );
 }
 
@@ -243,6 +198,28 @@ function Metric({ icon: Icon, label, value }: { icon: IconComponent; label: stri
         <p className="text-sm font-medium">{label}</p>
       </div>
       <p className="mt-2 truncate text-base font-semibold text-slate-950">{value}</p>
+    </div>
+  );
+}
+
+function DailySpendMetric({ current, limit }: { current: number; limit: number }) {
+  const percent = Math.min((current / limit) * 100, 100);
+  const progressTone = percent >= 90 ? "bg-rose-500" : percent >= 70 ? "bg-amber-500" : "bg-emerald-500";
+  const textTone = percent >= 90 ? "text-rose-700" : percent >= 70 ? "text-amber-700" : "text-emerald-700";
+
+  return (
+    <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
+      <div className="flex items-center gap-2 text-slate-500">
+        <CircleDollarSign size={17} aria-hidden="true" />
+        <p className="text-sm font-medium">Spent today</p>
+      </div>
+      <div className="mt-2 flex items-baseline justify-between gap-3">
+        <p className="truncate text-base font-semibold text-slate-950">{current} / {limit} USDC</p>
+        <p className={`text-xs font-bold ${textTone}`}>{Math.round(percent)}%</p>
+      </div>
+      <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-200" aria-label={`Spent today ${current} of ${limit} USDC`}>
+        <div className={`h-full rounded-full ${progressTone}`} style={{ width: `${percent}%` }} />
+      </div>
     </div>
   );
 }
