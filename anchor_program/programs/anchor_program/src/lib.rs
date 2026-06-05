@@ -1,3 +1,5 @@
+#![allow(clippy::diverging_sub_expression)]
+
 pub mod constants;
 pub mod error;
 pub mod instructions;
@@ -14,7 +16,11 @@ declare_id!("98yejd2ParWqYVsi1AwdJBwxSsrzCyMRX1EKVVmTPqhy");
 pub mod anchor_program {
     use super::*;
 
-    pub fn initialize(ctx: Context<Initialize>) -> Result<()> {
-        initialize::handler(ctx)
+    pub fn initialize(
+        ctx: Context<Initialize>,
+        daily_limit: u64,
+        onetime_limit: u64,
+    ) -> Result<()> {
+        initialize::initialize_vault(ctx, daily_limit, onetime_limit)
     }
 }
