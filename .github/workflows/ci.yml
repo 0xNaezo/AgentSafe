@@ -14,15 +14,20 @@ jobs:
   anchor:
     name: Anchor program
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: anchor_program
     env:
       ANCHOR_VERSION: 1.0.2
+      RUST_TOOLCHAIN: 1.89.0
       SOLANA_VERSION: v3.1.10
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          persist-credentials: false
 
       - name: Install system dependencies
         run: |
@@ -35,12 +40,25 @@ jobs:
             protobuf-compiler
 
       - name: Install Rust toolchain
-        uses: dtolnay/rust-toolchain@1.89.0
+        uses: dtolnay/rust-toolchain@193d6aa1dbbc28bd2c0a6b0e327cfdce68baaf6e
         with:
           components: clippy,rustfmt
 
+      - name: Cache cargo dependencies
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: |
+            ~/.cargo/registry
+            ~/.cargo/git
+            anchor_program/target
+          key: cargo-${{ runner.os }}-${{ env.RUST_TOOLCHAIN }}-${{ env.SOLANA_VERSION }}-${{ hashFiles('anchor_program/Cargo.lock') }}
+          restore-keys: |
+            cargo-${{ runner.os }}-${{ env.RUST_TOOLCHAIN }}-${{ env.SOLANA_VERSION }}-
+            cargo-${{ runner.os }}-${{ env.RUST_TOOLCHAIN }}-
+            cargo-${{ runner.os }}-
+
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with:
           node-version: 24
           cache: yarn
@@ -51,7 +69,10 @@ jobs:
 
       - name: Install Solana CLI
         run: |
-          sh -c "$(curl -sSfL https://release.anza.xyz/${SOLANA_VERSION}/install)"
+          installer="$(mktemp)"
+          curl -fsSL "https://release.anza.xyz/${SOLANA_VERSION}/install" -o "$installer"
+          echo "dfd8afbff06d8c0302e11c2fbead5464d5c773097af97c772f3df8470677e130  $installer" | sha256sum --check
+          sh "$installer"
           echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
 
       - name: Install Anchor CLI
@@ -78,15 +99,19 @@ jobs:
   web:
     name: Web app
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
     defaults:
       run:
         working-directory: web
     steps:
       - name: Checkout
-        uses: actions/checkout@v6
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          persist-credentials: false
 
       - name: Set up Node.js
-        uses: actions/setup-node@v5
+        uses: actions/setup-node@a0853c24544627f65ddf259abe73b1d18a591444
         with:
           node-version: 24
           cache: npm

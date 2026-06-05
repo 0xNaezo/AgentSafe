@@ -12,6 +12,10 @@ on:
       - "anchor_program/Cargo.lock"
       - "anchor_program/**/Cargo.toml"
 
+concurrency:
+  group: audit-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   security:
     name: Security Audit
@@ -19,10 +23,12 @@ jobs:
     permissions:
       contents: read
     steps:
-      - uses: actions/checkout@v6
+      - uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
+        with:
+          persist-credentials: false
 
       - name: Install cargo-audit
-        uses: taiki-e/install-action@cargo-audit
+        uses: taiki-e/install-action@e762cc4bcfeb7d35a09c6ebb32b0e7222b74690c
 
       - name: Run cargo audit
         working-directory: anchor_program
