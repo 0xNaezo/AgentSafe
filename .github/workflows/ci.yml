@@ -24,6 +24,7 @@ jobs:
       ANCHOR_CLI_SHA256: 51c158a7b66db6d9802afe59cd73e6d78928791114b55567de5c0732e88770eb
       RUST_TOOLCHAIN: 1.89.0
       SOLANA_VERSION: v3.1.10
+      SOLANA_INSTALLER_SHA256: dfd8afbff06d8c0302e11c2fbead5464d5c773097af97c772f3df8470677e130
     steps:
       - name: Checkout
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10
@@ -70,9 +71,11 @@ jobs:
 
       - name: Install Solana CLI
         run: |
+          # SOLANA_INSTALLER_SHA256 is the known-good hash for the installer served by SOLANA_VERSION.
+          # Update both values together whenever SOLANA_VERSION changes.
           installer="$(mktemp)"
           curl -fsSL "https://release.anza.xyz/${SOLANA_VERSION}/install" -o "$installer"
-          echo "dfd8afbff06d8c0302e11c2fbead5464d5c773097af97c772f3df8470677e130  $installer" | sha256sum --check
+          echo "${SOLANA_INSTALLER_SHA256}  $installer" | sha256sum --check
           sh "$installer"
           echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
 
