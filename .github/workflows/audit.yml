@@ -1,0 +1,29 @@
+name: Security Audit
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "anchor_program/Cargo.lock"
+      - "anchor_program/**/Cargo.toml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "anchor_program/Cargo.lock"
+      - "anchor_program/**/Cargo.toml"
+
+jobs:
+  security:
+    name: Security Audit
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Install cargo-audit
+        uses: taiki-e/install-action@cargo-audit
+
+      - name: Run cargo audit
+        working-directory: anchor_program
+        run: cargo audit
