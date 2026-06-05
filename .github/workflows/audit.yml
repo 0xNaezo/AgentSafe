@@ -30,6 +30,13 @@ jobs:
       - name: Install cargo-audit
         uses: taiki-e/install-action@e762cc4bcfeb7d35a09c6ebb32b0e7222b74690c
 
+      - name: Cache cargo audit data
+        uses: actions/cache@0057852bfaa89a56745cba8c7296529d2fc39830
+        with:
+          path: ~/.cargo/advisory-db
+          key: cargo-audit-${{ runner.os }}-${{ hashFiles('anchor_program/Cargo.lock') }}
+          restore-keys: cargo-audit-${{ runner.os }}-
+
       - name: Run cargo audit
         working-directory: anchor_program
         run: cargo audit

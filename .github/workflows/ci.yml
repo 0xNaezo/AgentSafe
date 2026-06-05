@@ -21,6 +21,7 @@ jobs:
         working-directory: anchor_program
     env:
       ANCHOR_VERSION: 1.0.2
+      ANCHOR_CLI_SHA256: 51c158a7b66db6d9802afe59cd73e6d78928791114b55567de5c0732e88770eb
       RUST_TOOLCHAIN: 1.89.0
       SOLANA_VERSION: v3.1.10
     steps:
@@ -76,7 +77,12 @@ jobs:
           echo "$HOME/.local/share/solana/install/active_release/bin" >> "$GITHUB_PATH"
 
       - name: Install Anchor CLI
-        run: cargo install anchor-cli --version "$ANCHOR_VERSION" --locked
+        run: |
+          anchor_bin="$(mktemp)"
+          curl -fsSL "https://github.com/coral-xyz/anchor/releases/download/v${ANCHOR_VERSION}/anchor-${ANCHOR_VERSION}-x86_64-unknown-linux-gnu" -o "$anchor_bin"
+          echo "${ANCHOR_CLI_SHA256}  $anchor_bin" | sha256sum --check
+          sudo install -m 0755 "$anchor_bin" /usr/local/bin/anchor
+          anchor --version
 
       - name: Check Anchor JavaScript formatting
         run: yarn lint
