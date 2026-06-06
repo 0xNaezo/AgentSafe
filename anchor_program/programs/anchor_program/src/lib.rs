@@ -21,6 +21,10 @@ pub mod anchor_program {
         daily_limit: u64,
         onetime_limit: u64,
     ) -> Result<()> {
-        initialize::initialize_vault(ctx, daily_limit, onetime_limit)
+        initialize::handler(ctx, daily_limit, onetime_limit)
+    }
+
+    pub fn execute_payment(ctx: Context<ExecutePayment>, amount: u64) -> Result<()> {
+        execute_payment::handler(ctx, amount)
     }
 }

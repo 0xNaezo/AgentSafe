@@ -1,7 +1,7 @@
 use crate::state::Vault;
 use crate::VAULT_SEED;
 use anchor_lang::prelude::*;
-use anchor_spl::token::{Mint, Token, TokenAccount};
+use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
 #[derive(Accounts)]
 pub struct Initialize<'info> {
@@ -10,7 +10,8 @@ pub struct Initialize<'info> {
 
     pub agent: SystemAccount<'info>,
 
-    pub token_mint: Account<'info, Mint>,
+    #[account(mint::token_program = token_program)]
+    pub token_mint: InterfaceAccount<'info, Mint>,
 
     #[account(
         init,
@@ -28,15 +29,16 @@ pub struct Initialize<'info> {
         bump,
         token::mint = token_mint,
         token::authority = vault_state,
+        token::token_program = token_program,
     )]
-    pub vault_token_account: Account<'info, TokenAccount>,
+    pub vault_token_account: InterfaceAccount<'info, TokenAccount>,
 
     pub system_program: Program<'info, System>,
 
-    pub token_program: Program<'info, Token>,
+    pub token_program: Interface<'info, TokenInterface>,
 }
 
-pub fn initialize_vault(
+pub(crate) fn handler(
     ctx: Context<Initialize>,
     daily_limit: u64,
     onetime_limit: u64,
