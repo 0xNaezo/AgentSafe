@@ -87,6 +87,11 @@ jobs:
           sudo install -m 0755 "$anchor_bin" /usr/local/bin/anchor
           anchor --version
 
+      - name: Create Solana CI wallet
+        run: |
+          mkdir -p "$HOME/.config/solana"
+          solana-keygen new --no-bip39-passphrase --silent --outfile "$HOME/.config/solana/id.json"
+
       - name: Check Anchor JavaScript formatting
         run: yarn lint
 
@@ -101,6 +106,9 @@ jobs:
 
       - name: Build Anchor program and IDL
         run: anchor build --ignore-keys
+
+      - name: Run Anchor TypeScript tests
+        run: anchor test --skip-build --skip-lint --validator legacy
 
       - name: Run Rust tests
         run: cargo test --workspace --locked
