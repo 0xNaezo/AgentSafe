@@ -99,11 +99,11 @@ jobs:
       - name: Run Clippy
         run: cargo clippy --workspace --all-targets --locked -- -D warnings
 
-      - name: Run Rust tests
-        run: cargo test --workspace --locked
-
       - name: Build Anchor program and IDL
         run: anchor build --ignore-keys
+
+      - name: Run Rust tests
+        run: cargo test --workspace --locked
 
   web:
     name: Web app
