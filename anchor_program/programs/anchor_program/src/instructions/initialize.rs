@@ -1,5 +1,5 @@
-use crate::state::Vault;
 use crate::VAULT_SEED;
+use crate::{error::AgentSafeError, state::Vault};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{Mint, TokenAccount, TokenInterface};
 
@@ -44,6 +44,11 @@ pub(crate) fn handler(
     onetime_limit: u64,
 ) -> Result<()> {
     let vault_state = &mut ctx.accounts.vault_state;
+
+    require!(
+        daily_limit >= onetime_limit,
+        AgentSafeError::InvalidLimitsConfiguration
+    );
 
     vault_state.owner = ctx.accounts.owner.key();
     vault_state.agent = ctx.accounts.agent.key();
