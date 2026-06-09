@@ -4,6 +4,7 @@ node_modules/
 .env
 .env.*
 !.env.example
+fake_usdc_mint.json
 # --- Next.js / Frontend ---
 web/.next/
 web/out/
