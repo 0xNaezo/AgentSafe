@@ -5,9 +5,9 @@ import {
   MessagesSquare,
   ShieldCheck,
   SlidersHorizontal,
-  Wallet,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
+import { WalletConnect } from "./wallet-connect";
 
 type AppRoute = "/" | "/vault-setup" | "/agent-chat";
 
@@ -67,10 +67,7 @@ export function AppShell({ activeHref, children, title }: AppShellProps) {
           </nav>
 
           <div className="flex items-center gap-2 lg:justify-end">
-            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800" type="button">
-              <Wallet size={18} aria-hidden="true" />
-              Connect wallet
-            </button>
+            <WalletConnect />
           </div>
         </header>
 

@@ -58,3 +58,7 @@ a {
 .field-control:focus {
   border-color: #94a3b8;
 }
+
+.wallet-button-shell {
+  position: relative;
+}

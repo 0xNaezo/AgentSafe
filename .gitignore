@@ -13,12 +13,14 @@ web/build/
 /out/
 /build/
 *.tsbuildinfo
+.npm-cache/
 # --- Anchor / Rust ---
 anchor_program/target/
 anchor_program/.anchor/
 anchor_program/test-ledger/
 anchor_program/.surfpool/
 anchor_program/**/*.rs.bk
+test-ledger/
 # --- JavaScript Package Managers ---
 .yarn/
 npm-debug.log*

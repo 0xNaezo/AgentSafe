@@ -1,3 +1,11 @@
+"use client";
+
+import type { ReactNode } from "react";
+import { useMemo, useState } from "react";
+import { useConnection } from "@solana/wallet-adapter-react";
+import { useWallet } from "@solana/wallet-adapter-react";
+import { getMint } from "@solana/spl-token";
+import { PublicKey } from "@solana/web3.js";
 import {
   Bot,
   CircleDollarSign,
@@ -10,6 +18,19 @@ import {
   Wallet,
 } from "lucide-react";
 import { AppShell } from "../components/app-shell";
+import { useHasMounted } from "../hooks/use-has-mounted";
+import { parseTokenAmount } from "../../lib/solana/amounts";
+import {
+  DEMO_TOKEN_MINT,
+  PROGRAM_ID_MISMATCH,
+  RPC_URL,
+} from "../../lib/solana/config";
+import {
+  deriveVaultPda,
+  deriveVaultTokenAccountPda,
+} from "../../lib/solana/pda";
+import { useAgentSafeProgram } from "../../lib/solana/program";
+import { initializeVault } from "../../lib/solana/vault";
 
 const setupChecks = [
   "Owner controls configuration and approvals",
@@ -18,11 +39,146 @@ const setupChecks = [
   "Critical policy checks are enforced on-chain",
 ];
 
+type SubmitState =
+  | { kind: "idle" }
+  | { kind: "loading"; message: string }
+  | {
+      kind: "success";
+      message: string;
+      signature: string;
+      vaultState: string;
+      vaultTokenAccount: string;
+    }
+  | { kind: "error"; message: string };
+
 export default function VaultSetupPage() {
+  const { connection } = useConnection();
+  const { publicKey } = useWallet();
+  const program = useAgentSafeProgram();
+  const hasMounted = useHasMounted();
+  const ownerPublicKey = hasMounted ? publicKey : null;
+  const anchorProgram = hasMounted ? program : null;
+
+  const [agentAddress, setAgentAddress] = useState("");
+  const [tokenMintAddress, setTokenMintAddress] = useState(DEMO_TOKEN_MINT);
+  const [dailyLimit, setDailyLimit] = useState("900");
+  const [onetimeLimit, setOnetimeLimit] = useState("150");
+  const [submitState, setSubmitState] = useState<SubmitState>({ kind: "idle" });
+
+  const tokenMint = useMemo(
+    () => parsePublicKeyOrNull(tokenMintAddress),
+    [tokenMintAddress],
+  );
+
+  const agent = useMemo(
+    () => parsePublicKeyOrNull(agentAddress),
+    [agentAddress],
+  );
+
+  const vaultAddresses = useMemo(() => {
+    if (!ownerPublicKey || !tokenMint) {
+      return null;
+    }
+
+    const [vaultState] = deriveVaultPda(ownerPublicKey, tokenMint);
+    const [vaultTokenAccount] = deriveVaultTokenAccountPda(vaultState);
+
+    return { vaultState, vaultTokenAccount };
+  }, [ownerPublicKey, tokenMint]);
+
+  const canSubmit =
+    hasMounted &&
+    Boolean(ownerPublicKey) &&
+    Boolean(anchorProgram) &&
+    Boolean(agent) &&
+    Boolean(tokenMint) &&
+    Boolean(vaultAddresses) &&
+    submitState.kind !== "loading" &&
+    !PROGRAM_ID_MISMATCH;
+
+  async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    try {
+      if (!ownerPublicKey) {
+        throw new Error("Connect the owner wallet before creating a vault.");
+      }
+
+      if (!anchorProgram) {
+        throw new Error("Wallet is not ready to sign Anchor transactions yet.");
+      }
+
+      if (PROGRAM_ID_MISMATCH) {
+        throw new Error("Configured program id does not match the bundled IDL.");
+      }
+
+      if (!agent) {
+        throw new Error("Agent wallet must be a valid Solana public key.");
+      }
+
+      if (!tokenMint) {
+        throw new Error("Token mint must be a valid Solana public key.");
+      }
+
+      if (!vaultAddresses) {
+        throw new Error("Vault PDA could not be derived.");
+      }
+
+      setSubmitState({
+        kind: "loading",
+        message: "Reading token mint and preparing transaction...",
+      });
+
+      const mint = await getMint(connection, tokenMint);
+      const dailyLimitUnits = parseTokenAmount(dailyLimit, mint.decimals);
+      const onetimeLimitUnits = parseTokenAmount(onetimeLimit, mint.decimals);
+
+      if (dailyLimitUnits.toString() === "0") {
+        throw new Error("Daily limit must be greater than zero.");
+      }
+
+      if (onetimeLimitUnits.toString() === "0") {
+        throw new Error("One-time limit must be greater than zero.");
+      }
+
+      setSubmitState({
+        kind: "loading",
+        message: "Waiting for wallet signature...",
+      });
+
+      const signature = await initializeVault(anchorProgram, {
+        agent,
+        dailyLimit: dailyLimitUnits,
+        owner: ownerPublicKey,
+        onetimeLimit: onetimeLimitUnits,
+        tokenMint,
+        vaultState: vaultAddresses.vaultState,
+        vaultTokenAccount: vaultAddresses.vaultTokenAccount,
+      });
+
+      setSubmitState({
+        kind: "success",
+        message: "Vault created on localnet.",
+        signature,
+        vaultState: vaultAddresses.vaultState.toBase58(),
+        vaultTokenAccount: vaultAddresses.vaultTokenAccount.toBase58(),
+      });
+    } catch (error) {
+      setSubmitState({
+        kind: "error",
+        message: getErrorMessage(error),
+      });
+    }
+  }
+
   return (
     <AppShell activeHref="/vault-setup" title="Vault Setup">
       <section className="grid gap-4 py-5 lg:grid-cols-[1fr_0.42fr]">
-        <form className="grid gap-4" aria-label="Vault policy configuration">
+        <form
+          className="grid gap-4"
+          aria-label="Vault policy configuration"
+          onSubmit={handleSubmit}
+        >
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
@@ -31,7 +187,7 @@ export default function VaultSetupPage() {
               </div>
               <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
                 <ShieldCheck size={16} aria-hidden="true" />
-                Policy draft
+                Localnet draft
               </div>
             </div>
 
@@ -39,59 +195,45 @@ export default function VaultSetupPage() {
               <Field label="Vault owner wallet" htmlFor="owner-wallet" icon={Wallet}>
                 <input
                   id="owner-wallet"
-                  name="owner-wallet"
-                  className="field-control"
-                  defaultValue="Connected owner wallet"
-                  placeholder="Connect wallet to fill owner address"
+                  className="field-control font-mono"
+                  value={ownerPublicKey?.toBase58() ?? "Connect wallet to fill owner address"}
+                  readOnly
                 />
               </Field>
               <Field label="Vault Address (PDA)" htmlFor="vault-address" icon={LockKeyhole}>
-                <div className="grid grid-cols-[1fr_auto] overflow-hidden rounded-lg border border-slate-200 bg-white focus-within:border-slate-400">
-                  <input
-                    id="vault-address"
-                    name="vault-address"
-                    className="min-h-11 min-w-0 border-0 bg-transparent px-3 font-mono text-sm font-semibold text-slate-950 outline-none"
-                    defaultValue="4k3...x92"
-                    readOnly
-                  />
-                  <button
-                    className="inline-flex h-11 w-11 items-center justify-center border-l border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50"
-                    type="button"
-                    aria-label="Copy vault address"
-                    title="Copy vault address"
-                  >
-                    <Copy size={16} aria-hidden="true" />
-                  </button>
-                </div>
+                <ReadonlyAddress
+                  id="vault-address"
+                  value={vaultAddresses?.vaultState.toBase58() ?? "Connect wallet and enter mint"}
+                />
               </Field>
               <Field label="Assigned agent wallet" htmlFor="agent-wallet" icon={Bot}>
                 <input
                   id="agent-wallet"
                   name="agent-wallet"
                   className="field-control font-mono"
-                  defaultValue="3c4F...8b92"
+                  value={agentAddress}
+                  onChange={(event) => setAgentAddress(event.target.value)}
                   placeholder="Agent wallet public key"
                 />
               </Field>
               <Field label="Vault token mint" htmlFor="token-mint" icon={LockKeyhole}>
-                <select id="token-mint" name="token-mint" className="field-control">
-                  <option>USDC</option>
-                  <option>SOL demo token</option>
-                </select>
+                <input
+                  id="token-mint"
+                  name="token-mint"
+                  className="field-control font-mono"
+                  value={tokenMintAddress}
+                  onChange={(event) => setTokenMintAddress(event.target.value)}
+                  placeholder="Local demo token mint public key"
+                />
               </Field>
-              <Field label="Initial deposit" htmlFor="initial-deposit" icon={CircleDollarSign}>
-                <div className="grid grid-cols-[1fr_auto] overflow-hidden rounded-lg border border-slate-200 bg-white focus-within:border-slate-400">
-                  <input
-                    id="initial-deposit"
-                    name="initial-deposit"
-                    className="min-h-11 min-w-0 border-0 bg-transparent px-3 text-sm font-semibold text-slate-950 outline-none"
-                    defaultValue="500"
-                    inputMode="decimal"
-                  />
-                  <span className="flex items-center border-l border-slate-200 px-3 text-sm font-semibold text-slate-500">
-                    USDC
-                  </span>
-                </div>
+              <Field label="Token Vault Account (PDA)" htmlFor="token-vault-address" icon={LockKeyhole}>
+                <ReadonlyAddress
+                  id="token-vault-address"
+                  value={vaultAddresses?.vaultTokenAccount.toBase58() ?? "Derived after mint is valid"}
+                />
+              </Field>
+              <Field label="RPC endpoint" htmlFor="rpc-endpoint" icon={Info}>
+                <input id="rpc-endpoint" className="field-control font-mono" value={RPC_URL} readOnly />
               </Field>
             </div>
           </div>
@@ -106,32 +248,52 @@ export default function VaultSetupPage() {
             </div>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <LimitField label="Daily spending limit" value="900" />
-              <LimitField label="Manual approval over" value="150" />
+              <LimitField
+                label="Daily spending limit"
+                value={dailyLimit}
+                onChange={setDailyLimit}
+              />
+              <LimitField
+                label="One-time spending limit"
+                value={onetimeLimit}
+                onChange={setOnetimeLimit}
+              />
             </div>
 
             <div className="mt-5 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
               <div>
                 <p className="text-sm font-semibold text-slate-950">Pause switch</p>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  Owner can immediately stop agent-initiated activity while keeping funds in the vault.
+                  The current on-chain MVP stores spending limits only; pause can be added once policy state grows.
                 </p>
               </div>
               <label className="inline-flex w-fit items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm">
-                <input className="h-4 w-4 accent-slate-950" type="checkbox" name="pause-vault" />
+                <input className="h-4 w-4 accent-slate-950" type="checkbox" name="pause-vault" disabled />
                 <Pause size={16} aria-hidden="true" />
                 Paused
               </label>
             </div>
           </div>
 
+          {submitState.kind !== "idle" && (
+            <StatusPanel state={submitState} />
+          )}
+
           <div className="flex flex-wrap justify-end gap-2 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
-            <button className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50" type="button">
-              Save draft
+            <button
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+              type="button"
+              onClick={() => setSubmitState({ kind: "idle" })}
+            >
+              Clear status
             </button>
-            <button className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800" type="button">
+            <button
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+              type="submit"
+              disabled={!canSubmit}
+            >
               <ShieldCheck size={17} aria-hidden="true" />
-              Create vault
+              {submitState.kind === "loading" ? "Creating..." : "Create vault"}
             </button>
           </div>
         </form>
@@ -148,7 +310,7 @@ export default function VaultSetupPage() {
               </div>
             </div>
             <p className="mt-4 text-sm leading-6 text-slate-600">
-              The first AgentSafe vault stores funds in a program-controlled account and checks one active policy before a transfer can move.
+              This form calls the Anchor `initialize` instruction. It creates the vault state account and the program-owned token vault account.
             </p>
           </div>
 
@@ -170,7 +332,7 @@ export default function VaultSetupPage() {
 }
 
 type FieldProps = {
-  children: React.ReactNode;
+  children: ReactNode;
   htmlFor: string;
   icon: typeof ShieldCheck;
   label: string;
@@ -188,7 +350,15 @@ function Field({ children, htmlFor, icon: Icon, label }: FieldProps) {
   );
 }
 
-function LimitField({ label, value }: { label: string; value: string }) {
+function LimitField({
+  label,
+  onChange,
+  value,
+}: {
+  label: string;
+  onChange: (value: string) => void;
+  value: string;
+}) {
   const inputId = label.toLowerCase().replaceAll(" ", "-");
 
   return (
@@ -198,13 +368,83 @@ function LimitField({ label, value }: { label: string; value: string }) {
         <input
           id={inputId}
           className="min-h-11 min-w-0 border-0 bg-transparent px-3 text-sm font-semibold text-slate-950 outline-none"
-          defaultValue={value}
+          value={value}
+          onChange={(event) => onChange(event.target.value)}
           inputMode="decimal"
         />
         <span className="flex items-center border-l border-slate-200 px-3 text-sm font-semibold text-slate-500">
-          USDC
+          token units
         </span>
       </div>
     </label>
   );
+}
+
+function ReadonlyAddress({ id, value }: { id: string; value: string }) {
+  return (
+    <div className="grid grid-cols-[1fr_auto] overflow-hidden rounded-lg border border-slate-200 bg-white">
+      <input
+        id={id}
+        className="min-h-11 min-w-0 border-0 bg-transparent px-3 font-mono text-sm font-semibold text-slate-950 outline-none"
+        value={value}
+        readOnly
+      />
+      <button
+        className="inline-flex h-11 w-11 items-center justify-center border-l border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50"
+        type="button"
+        aria-label="Copy address"
+        title="Copy address"
+        onClick={() => navigator.clipboard.writeText(value)}
+      >
+        <Copy size={16} aria-hidden="true" />
+      </button>
+    </div>
+  );
+}
+
+function StatusPanel({ state }: { state: Exclude<SubmitState, { kind: "idle" }> }) {
+  const tone =
+    state.kind === "error"
+      ? "border-rose-200 bg-rose-50 text-rose-800"
+      : state.kind === "success"
+        ? "border-emerald-200 bg-emerald-50 text-emerald-800"
+        : "border-sky-200 bg-sky-50 text-sky-800";
+
+  return (
+    <div className={`rounded-lg border p-4 text-sm font-medium ${tone}`}>
+      <p>{state.message}</p>
+      {state.kind === "success" && (
+        <div className="mt-3 grid gap-2 font-mono text-xs">
+          <p className="break-all">tx: {state.signature}</p>
+          <p className="break-all">vault: {state.vaultState}</p>
+          <p className="break-all">token vault: {state.vaultTokenAccount}</p>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function parsePublicKeyOrNull(value: string) {
+  try {
+    const trimmed = value.trim();
+    return trimmed ? new PublicKey(trimmed) : null;
+  } catch {
+    return null;
+  }
+}
+
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message.trim()) {
+    return error.message;
+  }
+
+  if (typeof error === "object" && error !== null && "message" in error) {
+    const message = String(error.message).trim();
+
+    if (message) {
+      return message;
+    }
+  }
+
+  return "Vault creation failed. Check the wallet, localnet RPC, token mint, and whether this vault already exists.";
 }
