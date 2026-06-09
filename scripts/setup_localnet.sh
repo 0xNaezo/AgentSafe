@@ -66,6 +66,7 @@ expand_path() {
 require_command solana
 require_command solana-keygen
 require_command spl-token
+require_command anchor
 
 if [[ ! -r "$ENV_FILE" ]]; then
   fail "Config file not found: ${ENV_FILE}. Create it with: cp .env.example .env"
@@ -115,6 +116,12 @@ solana cluster-version --url "$RPC_URL" >/dev/null || fail "Cannot reach Solana 
 log "Airdropping SOL"
 solana airdrop "$AIRDROP_AMOUNT" --url "$RPC_URL"
 solana airdrop "$AIRDROP_AMOUNT" "$PHANTOM_WALLET" --url "$RPC_URL"
+
+echo "Building and deploying Anchor program..."
+pushd "${REPO_ROOT}/anchor_program" >/dev/null
+anchor build
+anchor program deploy
+popd >/dev/null
 
 if [[ ! -f "$MINT_KEYPAIR_PATH" ]]; then
   log "Generating mint keypair"
