@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { getAccount, getMint } from "@solana/spl-token";
+import { getAccount, getMint, TokenAccountNotFoundError } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import {
   Activity,
@@ -116,14 +116,29 @@ export default function Home() {
       }
 
       const mint = await getMint(connection, tokenMint);
-      const tokenAccount = await getAccount(connection, addresses.vaultTokenAccount);
 
-      setState({
-        kind: "ready",
-        vault,
-        mintDecimals: mint.decimals,
-        vaultBalance: formatTokenAmount(tokenAccount.amount.toString(), mint.decimals),
-      });
+      try {
+        const tokenAccount = await getAccount(connection, addresses.vaultTokenAccount);
+
+        setState({
+          kind: "ready",
+          vault,
+          mintDecimals: mint.decimals,
+          vaultBalance: formatTokenAmount(tokenAccount.amount.toString(), mint.decimals),
+        });
+      } catch (error) {
+        if (error instanceof TokenAccountNotFoundError) {
+          setState({
+            kind: "ready",
+            vault,
+            mintDecimals: mint.decimals,
+            vaultBalance: "0",
+          });
+          return;
+        }
+
+        throw error;
+      }
     } catch (error) {
       setState({
         kind: "error",

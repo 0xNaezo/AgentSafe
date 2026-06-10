@@ -5,7 +5,7 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import type { PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { useMemo } from "react";
 
-import type { AnchorProgram } from "../../../anchor_program/target/types/anchor_program";
+import type { AnchorProgram } from "../../types/anchor_program";
 import { idl } from "./config";
 
 type BrowserAnchorWallet = {
