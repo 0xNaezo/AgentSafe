@@ -1,6 +1,8 @@
 import BN from "bn.js";
 
 export function parseTokenAmount(value: string, decimals: number) {
+  validateDecimals(decimals);
+
   const trimmed = value.trim();
 
   if (!trimmed) {
@@ -22,7 +24,14 @@ export function parseTokenAmount(value: string, decimals: number) {
 }
 
 export function formatTokenAmount(amount: BN | string | number, decimals: number) {
+  validateDecimals(decimals);
+
   const raw = amount.toString();
+  const isNegative = amount instanceof BN ? amount.isNeg() : raw.startsWith("-");
+
+  if (isNegative) {
+    throw new RangeError("amount must be non-negative");
+  }
 
   if (decimals === 0) {
     return raw;
@@ -33,4 +42,10 @@ export function formatTokenAmount(amount: BN | string | number, decimals: number
   const fraction = padded.slice(-decimals).replace(/0+$/, "");
 
   return fraction ? `${whole}.${fraction}` : whole;
+}
+
+function validateDecimals(decimals: number) {
+  if (!Number.isInteger(decimals) || decimals < 0) {
+    throw new Error("Invalid decimals: must be a non-negative integer");
+  }
 }

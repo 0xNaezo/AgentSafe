@@ -37,7 +37,7 @@ export async function fetchVault(
 export async function initializeVault(
   program: AgentSafeProgram,
   input: InitializeVaultInput,
-) {
+): Promise<string> {
   return program.methods
     .initialize(input.dailyLimit, input.onetimeLimit)
     .accountsStrict({

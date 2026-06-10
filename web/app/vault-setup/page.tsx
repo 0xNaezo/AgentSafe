@@ -281,9 +281,16 @@ export default function VaultSetupPage() {
 
           <div className="flex flex-wrap justify-end gap-2 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <button
-              className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
+              disabled={submitState.kind === "loading"}
               type="button"
-              onClick={() => setSubmitState({ kind: "idle" })}
+              onClick={() => {
+                if (submitState.kind === "loading") {
+                  return;
+                }
+
+                setSubmitState({ kind: "idle" });
+              }}
             >
               Clear status
             </button>
