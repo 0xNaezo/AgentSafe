@@ -1,4 +1,7 @@
+"use client";
+
 import Link from "next/link";
+import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import {
   LayoutDashboard,
@@ -12,22 +15,24 @@ import { WalletConnect } from "./wallet-connect";
 type AppRoute = "/" | "/vault-setup" | "/agent-chat";
 
 type AppShellProps = {
-  activeHref: AppRoute;
   children: ReactNode;
-  title: string;
 };
 
-const navItems: Array<{ href: AppRoute; label: string; icon: LucideIcon }> = [
-  { href: "/", label: "Dashboard", icon: LayoutDashboard },
-  { href: "/vault-setup", label: "Vault setup", icon: SlidersHorizontal },
-  { href: "/agent-chat", label: "Agent chat", icon: MessagesSquare },
+const navItems: Array<{ href: AppRoute; label: string; title: string; icon: LucideIcon }> = [
+  { href: "/", label: "Dashboard", title: "Policy Vault Dashboard", icon: LayoutDashboard },
+  { href: "/vault-setup", label: "Vault setup", title: "Vault Setup", icon: SlidersHorizontal },
+  { href: "/agent-chat", label: "Agent chat", title: "Agent Chat", icon: MessagesSquare },
 ];
 
-export function AppShell({ activeHref, children, title }: AppShellProps) {
+export function AppShell({ children }: AppShellProps) {
+  const pathname = usePathname();
+  const activeHref = getActiveHref(pathname);
+  const activeItem = navItems.find((item) => item.href === activeHref) ?? navItems[0];
+
   return (
     <main className="min-h-screen bg-[#f7f8fb] text-slate-950">
       <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
-        <header className="grid gap-4 border-b border-slate-200 pb-4 lg:grid-cols-[auto_1fr_auto] lg:items-center">
+        <header className="grid shrink-0 gap-4 border-b border-slate-200 pb-4 lg:grid-cols-[auto_1fr_auto] lg:items-center">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-white shadow-sm">
               <ShieldCheck size={22} aria-hidden="true" />
@@ -35,7 +40,7 @@ export function AppShell({ activeHref, children, title }: AppShellProps) {
             <div>
               <p className="text-sm font-medium text-slate-500">AgentSafe</p>
               <h1 className="text-xl font-semibold tracking-normal text-slate-950">
-                {title}
+                {activeItem.title}
               </h1>
             </div>
           </div>
@@ -75,6 +80,18 @@ export function AppShell({ activeHref, children, title }: AppShellProps) {
       </div>
     </main>
   );
+}
+
+function getActiveHref(pathname: string): AppRoute {
+  if (pathname.startsWith("/vault-setup")) {
+    return "/vault-setup";
+  }
+
+  if (pathname.startsWith("/agent-chat")) {
+    return "/agent-chat";
+  }
+
+  return "/";
 }
 
 export type IconComponent = LucideIcon;

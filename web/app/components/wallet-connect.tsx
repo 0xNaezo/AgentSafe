@@ -37,6 +37,7 @@ export function WalletConnect() {
     );
   }, [isConnected, wallets]);
   const firstActionableIndex = actionableIndexes[0] ?? 0;
+  const opensMenu = !hasMounted || isConnected || !wallet;
 
   useEffect(() => {
     if (!isOpen) {
@@ -74,7 +75,11 @@ export function WalletConnect() {
       return;
     }
 
-    await connect();
+    try {
+      await connect();
+    } catch (error) {
+      console.error("Failed to connect wallet.", error);
+    }
   }
 
   function toggleMenu() {
@@ -143,7 +148,7 @@ export function WalletConnect() {
       <button
         aria-controls={isOpen ? `${toggleButtonId}-menu` : undefined}
         aria-expanded={isOpen}
-        aria-haspopup="menu"
+        aria-haspopup={opensMenu ? "menu" : undefined}
         className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
         id={toggleButtonId}
         type="button"

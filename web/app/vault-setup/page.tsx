@@ -17,7 +17,6 @@ import {
   ShieldCheck,
   Wallet,
 } from "lucide-react";
-import { AppShell } from "../components/app-shell";
 import { useHasMounted } from "../hooks/use-has-mounted";
 import { parseTokenAmount } from "../../lib/solana/amounts";
 import {
@@ -172,7 +171,7 @@ export default function VaultSetupPage() {
   }
 
   return (
-    <AppShell activeHref="/vault-setup" title="Vault Setup">
+    <>
       <section className="grid gap-4 py-5 lg:grid-cols-[1fr_0.42fr]">
         <form
           className="grid gap-4"
@@ -334,7 +333,7 @@ export default function VaultSetupPage() {
           </div>
         </aside>
       </section>
-    </AppShell>
+    </>
   );
 }
 

@@ -11,7 +11,6 @@ import {
   User,
   XCircle,
 } from "lucide-react";
-import { AppShell } from "../components/app-shell";
 
 const messages = [
   {
@@ -86,7 +85,7 @@ const promptExamples = [
 
 export default function AgentChatPage() {
   return (
-    <AppShell activeHref="/agent-chat" title="Agent Chat">
+    <>
       <section className="grid flex-1 gap-4 py-5 lg:grid-cols-[1fr_0.45fr]">
         <div className="flex min-h-[720px] flex-col rounded-lg border border-slate-200 bg-white shadow-sm">
           <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-5">
@@ -217,6 +216,6 @@ export default function AgentChatPage() {
           </div>
         </aside>
       </section>
-    </AppShell>
+    </>
   );
 }
