@@ -20,7 +20,6 @@ import {
   TriangleAlert,
   Wallet,
 } from "lucide-react";
-import { AppShell } from "./components/app-shell";
 import { formatTokenAmount } from "../lib/solana/amounts";
 import {
   DEMO_TOKEN_MINT,
@@ -156,7 +155,7 @@ export default function Home() {
   }, [loadVault]);
 
   return (
-    <AppShell activeHref="/" title="Policy Vault Dashboard">
+    <>
       <section className="grid gap-4 py-5 lg:grid-cols-[1.15fr_0.85fr]">
         <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-4">
@@ -221,7 +220,7 @@ export default function Home() {
         <PolicyCard state={state} mint={tokenMint} owner={publicKey} />
         <ConnectionCard addresses={addresses} tokenMint={tokenMint} />
       </section>
-    </AppShell>
+    </>
   );
 }
 
