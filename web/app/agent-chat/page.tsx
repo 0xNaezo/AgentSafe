@@ -69,8 +69,14 @@ const promptExamples = [
   "Show why full vault withdrawal is blocked",
 ];
 
+type HistoryMessage = {
+  role: "user" | "assistant" | "tool";
+  content: string | null;
+};
+
 export default function AgentChatPage() {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [history, setHistory] = useState<HistoryMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
 
@@ -88,31 +94,42 @@ export default function AgentChatPage() {
     setInput("");
     setLoading(true);
 
+    const updatedHistory: HistoryMessage[] = [
+      ...history,
+      { role: "user" as const, content },
+    ];
+
     try {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ message: content }),
+        body: JSON.stringify({ messages: updatedHistory }),
       });
 
       const data = await res.json();
 
+      if (data.messages) {
+        setHistory(data.messages);
+      }
+
       const newMessages: ChatMessage[] = [];
+
+      if (data.toolCalls?.length) {
+        for (const tc of data.toolCalls) {
+          newMessages.push({
+            author: `Tool: ${tc.name}`,
+            body: "```json\n" + JSON.stringify(tc.args, null, 2) + "\n```",
+            icon: Wrench,
+            align: "left",
+          });
+        }
+      }
 
       if (data.reply) {
         newMessages.push({
           author: "AgentSafe Agent",
           body: data.reply,
           icon: Bot,
-          align: "left",
-        });
-      }
-
-      if (data.toolCall) {
-        newMessages.push({
-          author: `Tool: ${data.toolCall.name}`,
-          body: "```json\n" + JSON.stringify(data.toolCall.args, null, 2) + "\n```",
-          icon: Wrench,
           align: "left",
         });
       }
