@@ -1,175 +1,54 @@
 import { NextResponse } from "next/server";
+import { completeChat } from "@/lib/chat/complete-chat";
+import type { ChatMessage } from "@/lib/chat/types";
 
-type ToolCallResult = {
-  name: string;
-  args: Record<string, unknown>;
+type ChatRequestBody = {
+  messages?: unknown;
 };
 
-type ChatMessage = {
-  role: "user" | "assistant" | "tool";
-  content: string | null;
-  tool_calls?: Array<{
-    id: string;
-    type: "function";
-    function: { name: string; arguments: string };
-  }>;
-  tool_call_id?: string;
-};
+function isChatMessage(value: unknown): value is ChatMessage {
+  if (!value || typeof value !== "object") return false;
 
-const tools = [
-  {
-    type: "function" as const,
-    function: {
-      name: "transfer",
-      description: "Transfer USDC to a recipient",
-      parameters: {
-        type: "object",
-        properties: {
-          amount: {
-            type: "string",
-            description: "Amount of USDC to transfer",
-          },
-          address: {
-            type: "string",
-            description: "Recipient wallet address",
-          },
-        },
-        required: ["amount", "address"],
-      },
-    },
-  },
-];
-
-async function callOpenRouter(
-  messages: ChatMessage[],
-): Promise<{ choice: Record<string, unknown> | null; ok: boolean; status: number; errorBody: string }> {
-  const response = await fetch("https://openrouter.ai/api/v1/chat/completions", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      Authorization: `Bearer ${process.env.OPENROUTER_API_KEY}`,
-      "HTTP-Referer": "http://localhost:3000",
-      "X-Title": "AgentSafe",
-    },
-    body: JSON.stringify({ model: "deepseek/deepseek-v4-flash", messages, tools }),
-  });
-
-  if (!response.ok) {
-    const errorBody = await response.text();
-    return { choice: null, ok: false, status: response.status, errorBody };
-  }
-
-  const data = await response.json();
-  return { choice: data.choices?.[0] ?? null, ok: true, status: 200, errorBody: "" };
+  const message = value as Partial<ChatMessage>;
+  return (
+    (message.role === "user" || message.role === "assistant" || message.role === "tool") &&
+    (typeof message.content === "string" || message.content === null)
+  );
 }
 
-function extractToolCalls(choice: Record<string, unknown>): ToolCallResult[] {
-  const message = choice.message as Record<string, unknown> | undefined;
-  const toolCalls = message?.tool_calls as Array<Record<string, unknown>> | undefined;
-  if (!toolCalls) return [];
+function parseMessages(body: ChatRequestBody) {
+  if (!Array.isArray(body.messages) || body.messages.length === 0) {
+    return null;
+  }
 
-  return toolCalls
-    .filter((tc) => tc.type === "function")
-    .map((tc) => ({
-      name: (tc.function as Record<string, unknown>).name as string,
-      args: JSON.parse((tc.function as Record<string, unknown>).arguments as string),
-    }));
+  if (!body.messages.every(isChatMessage)) {
+    return null;
+  }
+
+  return body.messages;
 }
 
 export async function POST(request: Request) {
   try {
-    const { messages: incomingMessages } = await request.json();
+    const body = (await request.json()) as ChatRequestBody;
+    const messages = parseMessages(body);
 
-    if (!incomingMessages || !Array.isArray(incomingMessages) || incomingMessages.length === 0) {
+    if (!messages) {
       return NextResponse.json({ error: "Messages array is required" }, { status: 400 });
     }
 
-    const messages: ChatMessage[] = incomingMessages;
-    const allToolCalls: ToolCallResult[] = [];
-    const maxIterations = 10;
-    let iteration = 0;
-
-    while (iteration < maxIterations) {
-      iteration++;
-
-      const { choice, ok, status, errorBody } = await callOpenRouter(messages);
-
-      if (!ok) {
-        console.error("OpenRouter error:", status, errorBody);
-        return NextResponse.json({ error: `OpenRouter API error: ${status}` }, { status: 502 });
-      }
-
-      if (!choice) {
-        return NextResponse.json({ reply: "No response from model", toolCalls: allToolCalls, messages });
-      }
-
-      const choiceTyped = choice as {
-        finish_reason: string;
-        message: {
-          content: string | null;
-          tool_calls?: Array<{
-            id: string;
-            type: "function";
-            function: { name: string; arguments: string };
-          }>;
-        };
-      };
-
-      if (choiceTyped.finish_reason === "stop") {
-        messages.push({
-          role: "assistant",
-          content: choiceTyped.message.content,
-        });
-
-        return NextResponse.json({
-          reply: choiceTyped.message.content ?? "",
-          toolCalls: allToolCalls,
-          messages,
-        });
-      }
-
-      if (choiceTyped.finish_reason === "tool_calls") {
-        const toolCalls = choiceTyped.message.tool_calls ?? [];
-
-        messages.push({
-          role: "assistant",
-          content: choiceTyped.message.content,
-          tool_calls: toolCalls,
-        });
-
-        for (const tc of toolCalls) {
-          messages.push({
-            role: "tool",
-            tool_call_id: tc.id,
-            content: '{"success": true}',
-          });
-        }
-
-        const extracted = extractToolCalls(choice as unknown as Record<string, unknown>);
-        allToolCalls.push(...extracted);
-
-        continue;
-      }
-
-      messages.push({
-        role: "assistant",
-        content: choiceTyped.message.content,
-      });
-
-      return NextResponse.json({
-        reply: choiceTyped.message.content ?? "",
-        toolCalls: allToolCalls,
-        messages,
-      });
+    if (!process.env.OPENROUTER_API_KEY) {
+      return NextResponse.json({ error: "OPENROUTER_API_KEY is not configured" }, { status: 503 });
     }
 
-    return NextResponse.json({
-      reply: "Reached maximum number of tool call iterations.",
-      toolCalls: allToolCalls,
-      messages,
-    });
+    const result = await completeChat(messages);
+    return NextResponse.json(result);
   } catch (error) {
     console.error("Chat API error:", error);
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+
+    const message = error instanceof Error ? error.message : "Internal server error";
+    const status = message.startsWith("OpenRouter API error") ? 502 : 500;
+
+    return NextResponse.json({ error: message }, { status });
   }
 }
