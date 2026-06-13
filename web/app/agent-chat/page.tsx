@@ -14,7 +14,7 @@ import {
   Wrench,
   XCircle,
 } from "lucide-react";
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 
@@ -63,11 +63,7 @@ const policyChecks = [
   },
 ];
 
-const promptExamples = [
-  "Pay OpenAI API 42 USDC for usage",
-  "Create approval request for Cloud GPU Pool, 180 USDC",
-  "Show why full vault withdrawal is blocked",
-];
+
 
 type HistoryMessage = {
   role: "user" | "assistant" | "tool";
@@ -79,6 +75,15 @@ export default function AgentChatPage() {
   const [history, setHistory] = useState<HistoryMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
+
+  useEffect(() => {
+    if (textareaRef.current) {
+      textareaRef.current.style.height = "52px";
+      const scrollHeight = textareaRef.current.scrollHeight;
+      textareaRef.current.style.height = `${Math.min(scrollHeight, 104)}px`;
+    }
+  }, [input]);
 
   async function sendMessage(content: string) {
     if (!content.trim() || loading) return;
@@ -239,28 +244,18 @@ export default function AgentChatPage() {
           </div>
 
           <div className="border-t border-slate-200 p-5">
-            <div className="mb-3 flex flex-wrap gap-2">
-              {promptExamples.map((prompt) => (
-                <button
-                  key={prompt}
-                  onClick={() => setInput(prompt)}
-                  className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
-                  type="button"
-                >
-                  {prompt}
-                </button>
-              ))}
-            </div>
             <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-[1fr_auto]">
               <label className="sr-only" htmlFor="agent-message">Message</label>
               <textarea
+                ref={textareaRef}
                 id="agent-message"
                 value={input}
                 onChange={(e) => setInput(e.target.value)}
                 onKeyDown={handleKeyDown}
                 placeholder="Type your message..."
                 disabled={loading}
-                className="min-h-24 resize-none rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm leading-6 text-slate-950 outline-none transition focus:border-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
+                className="resize-none overflow-y-auto rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm leading-6 text-slate-950 outline-none transition focus:border-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
+                style={{ height: "52px" }}
               />
               <button
                 onClick={handleSend}
