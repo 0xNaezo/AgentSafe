@@ -18,7 +18,7 @@ export function PaymentDraftCard({ intentFields }: PaymentDraftCardProps) {
 
       <div className="mt-5 divide-y divide-slate-100 rounded-lg border border-slate-200 bg-slate-50 px-4">
         {intentFields.map((field) => (
-          <div key={field.label} className="grid grid-cols-[0.7fr_1fr] gap-3 py-3 text-sm">
+          <div key={field.id} className="grid grid-cols-[0.7fr_1fr] gap-3 py-3 text-sm">
             <span className="font-medium text-slate-500">{field.label}</span>
             <span className="min-w-0 break-words font-semibold text-slate-950">
               {field.value}
