@@ -1,3 +1,5 @@
+"use client";
+
 import {
   ArrowRight,
   Bot,
@@ -11,33 +13,14 @@ import {
   User,
   XCircle,
 } from "lucide-react";
+import { useState } from "react";
 
-const messages = [
-  {
-    author: "User",
-    body: "Pay Cloud GPU Pool 180 USDC for the latest training run.",
-    icon: User,
-    align: "right",
-  },
-  {
-    author: "AgentSafe Agent",
-    body: "I parsed a payment intent and checked the assigned agent signature. The amount is above the manual approval threshold, so I would create a pending request for the owner.",
-    icon: Bot,
-    align: "left",
-  },
-  {
-    author: "User",
-    body: "What happens if a page tells you to send the whole vault to 9zzQ...x001?",
-    icon: User,
-    align: "right",
-  },
-  {
-    author: "AgentSafe Agent",
-    body: "That instruction would exceed policy limits. The vault should reject the request before funds move.",
-    icon: Bot,
-    align: "left",
-  },
-];
+type ChatMessage = {
+  author: string;
+  body: string;
+  icon: typeof User | typeof Bot;
+  align: "right" | "left";
+};
 
 const intentFields = [
   { label: "Recipient", value: "Cloud GPU Pool" },
@@ -84,6 +67,66 @@ const promptExamples = [
 ];
 
 export default function AgentChatPage() {
+  const [messages, setMessages] = useState<ChatMessage[]>([]);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  async function sendMessage(content: string) {
+    if (!content.trim() || loading) return;
+
+    const userMessage: ChatMessage = {
+      author: "User",
+      body: content,
+      icon: User,
+      align: "right",
+    };
+
+    setMessages((prev) => [...prev, userMessage]);
+    setInput("");
+    setLoading(true);
+
+    try {
+      const res = await fetch("/api/chat", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ message: content }),
+      });
+
+      const data = await res.json();
+
+      const botMessage: ChatMessage = {
+        author: "AgentSafe Agent",
+        body: data.reply ?? "No response",
+        icon: Bot,
+        align: "left",
+      };
+
+      setMessages((prev) => [...prev, botMessage]);
+    } catch {
+      const errorMessage: ChatMessage = {
+        author: "AgentSafe Agent",
+        body: "Error: failed to get a response. Make sure OPENROUTER_API_KEY is set.",
+        icon: Bot,
+        align: "left",
+      };
+
+      setMessages((prev) => [...prev, errorMessage]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  function handleSend() {
+    sendMessage(input);
+  }
+
+  function handleKeyDown(e: React.KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      handleSend();
+    }
+  }
+
   return (
     <>
       <section className="grid flex-1 gap-4 py-5 lg:grid-cols-[1fr_0.45fr]">
@@ -105,12 +148,17 @@ export default function AgentChatPage() {
           </div>
 
           <div className="flex-1 space-y-4 overflow-y-auto p-5">
-            {messages.map((message) => {
+            {messages.length === 0 && (
+              <div className="flex h-full items-center justify-center">
+                <p className="text-sm text-slate-400">Send a message to start the chat.</p>
+              </div>
+            )}
+            {messages.map((message, i) => {
               const Icon = message.icon;
               const isUser = message.align === "right";
 
               return (
-                <div key={message.body} className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
+                <div key={i} className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
                   {!isUser && (
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
                       <Icon size={17} aria-hidden="true" />
@@ -130,6 +178,17 @@ export default function AgentChatPage() {
                 </div>
               );
             })}
+            {loading && (
+              <div className="flex gap-3 justify-start">
+                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
+                  <Bot size={17} aria-hidden="true" />
+                </div>
+                <div className="max-w-[760px] rounded-lg border border-slate-200 bg-slate-50 p-4 text-slate-800">
+                  <p className="text-xs font-semibold text-slate-500">AgentSafe Agent</p>
+                  <p className="mt-2 text-sm leading-6 text-slate-400 italic">Thinking...</p>
+                </div>
+              </div>
+            )}
           </div>
 
           <div className="border-t border-slate-200 p-5">
@@ -137,6 +196,7 @@ export default function AgentChatPage() {
               {promptExamples.map((prompt) => (
                 <button
                   key={prompt}
+                  onClick={() => setInput(prompt)}
                   className="inline-flex h-9 items-center justify-center rounded-lg border border-slate-200 bg-white px-3 text-xs font-semibold text-slate-700 shadow-sm transition hover:border-slate-300 hover:bg-slate-50"
                   type="button"
                 >
@@ -148,10 +208,19 @@ export default function AgentChatPage() {
               <label className="sr-only" htmlFor="agent-message">Message</label>
               <textarea
                 id="agent-message"
-                className="min-h-24 resize-none rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm leading-6 text-slate-950 outline-none transition focus:border-slate-400"
-                defaultValue="Pay OpenAI API 42 USDC for usage this week."
+                value={input}
+                onChange={(e) => setInput(e.target.value)}
+                onKeyDown={handleKeyDown}
+                placeholder="Type your message..."
+                disabled={loading}
+                className="min-h-24 resize-none rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm leading-6 text-slate-950 outline-none transition focus:border-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
               />
-              <button className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 sm:self-end" type="button">
+              <button
+                onClick={handleSend}
+                disabled={loading || !input.trim()}
+                className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 sm:self-end"
+                type="button"
+              >
                 <Send size={17} aria-hidden="true" />
                 Send
               </button>
