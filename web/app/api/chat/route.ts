@@ -1,5 +1,29 @@
 import { NextResponse } from "next/server";
 
+const tools = [
+  {
+    type: "function" as const,
+    function: {
+      name: "transfer",
+      description: "Transfer USDC to a recipient",
+      parameters: {
+        type: "object",
+        properties: {
+          amount: {
+            type: "string",
+            description: "Amount of USDC to transfer",
+          },
+          address: {
+            type: "string",
+            description: "Recipient wallet address",
+          },
+        },
+        required: ["amount", "address"],
+      },
+    },
+  },
+];
+
 export async function POST(request: Request) {
   try {
     const { message } = await request.json();
@@ -21,6 +45,7 @@ export async function POST(request: Request) {
         body: JSON.stringify({
           model: "deepseek/deepseek-v4-flash",
           messages: [{ role: "user", content: message }],
+          tools,
         }),
       },
     );
@@ -35,9 +60,21 @@ export async function POST(request: Request) {
     }
 
     const data = await response.json();
-    const reply = data.choices?.[0]?.message?.content ?? "No response";
+    const choice = data.choices?.[0];
+    const reply = choice?.message?.content ?? "";
+    let toolCall = null;
 
-    return NextResponse.json({ reply });
+    if (choice?.finish_reason === "tool_calls") {
+      const tc = choice.message?.tool_calls?.[0];
+      if (tc?.type === "function") {
+        toolCall = {
+          name: tc.function.name,
+          args: JSON.parse(tc.function.arguments),
+        };
+      }
+    }
+
+    return NextResponse.json({ reply, toolCall });
   } catch (error) {
     console.error("Chat API error:", error);
     return NextResponse.json(

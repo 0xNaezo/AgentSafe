@@ -11,6 +11,7 @@ import {
   Send,
   ShieldCheck,
   User,
+  Wrench,
   XCircle,
 } from "lucide-react";
 import { useState } from "react";
@@ -96,14 +97,36 @@ export default function AgentChatPage() {
 
       const data = await res.json();
 
-      const botMessage: ChatMessage = {
-        author: "AgentSafe Agent",
-        body: data.reply ?? "No response",
-        icon: Bot,
-        align: "left",
-      };
+      const newMessages: ChatMessage[] = [];
 
-      setMessages((prev) => [...prev, botMessage]);
+      if (data.reply) {
+        newMessages.push({
+          author: "AgentSafe Agent",
+          body: data.reply,
+          icon: Bot,
+          align: "left",
+        });
+      }
+
+      if (data.toolCall) {
+        newMessages.push({
+          author: `Tool: ${data.toolCall.name}`,
+          body: "```json\n" + JSON.stringify(data.toolCall.args, null, 2) + "\n```",
+          icon: Wrench,
+          align: "left",
+        });
+      }
+
+      if (newMessages.length === 0) {
+        newMessages.push({
+          author: "AgentSafe Agent",
+          body: "No response",
+          icon: Bot,
+          align: "left",
+        });
+      }
+
+      setMessages((prev) => [...prev, ...newMessages]);
     } catch {
       const errorMessage: ChatMessage = {
         author: "AgentSafe Agent",
@@ -131,9 +154,10 @@ export default function AgentChatPage() {
 
   return (
     <>
-      <section className="grid flex-1 gap-4 py-5 lg:grid-cols-[1fr_0.45fr]">
-        <div className="flex min-h-[720px] flex-col rounded-lg border border-slate-200 bg-white shadow-sm">
-          <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-5">
+      <section className="grid flex-1 gap-4 py-5 lg:content-start lg:grid-cols-[1fr_0.45fr]">
+        <div className="relative flex min-h-0 flex-col">
+          <div className="flex flex-1 flex-col rounded-lg border border-slate-200 bg-white shadow-sm lg:absolute lg:inset-0 lg:h-full">
+            <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-5">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700">
                 <MessagesSquare size={19} aria-hidden="true" />
@@ -232,6 +256,7 @@ export default function AgentChatPage() {
               </button>
             </div>
           </div>
+        </div>
         </div>
 
         <aside className="grid content-start gap-4">
