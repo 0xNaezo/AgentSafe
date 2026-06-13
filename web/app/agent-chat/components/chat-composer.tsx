@@ -17,6 +17,10 @@ export function ChatComposer({
   onSend,
 }: ChatComposerProps) {
   function handleKeyDown(e: KeyboardEvent<HTMLTextAreaElement>) {
+    if (e.nativeEvent.isComposing) {
+      return;
+    }
+
     if (e.key === "Enter" && !e.shiftKey) {
       e.preventDefault();
       onSend();

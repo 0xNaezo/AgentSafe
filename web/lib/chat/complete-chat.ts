@@ -48,7 +48,7 @@ export async function completeChat(messages: ChatMessage[]): Promise<ChatComplet
         messages.push({
           role: "tool",
           tool_call_id: tc.id,
-          content: '{"success": true}',
+          content: '{"executed": false, "reason": "not_executed"}',
         });
       }
 

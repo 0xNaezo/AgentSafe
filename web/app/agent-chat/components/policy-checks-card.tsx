@@ -1,8 +1,14 @@
 import { ShieldCheck } from "lucide-react";
-import type { PolicyCheck } from "../types";
+import type { PolicyCheck, PolicyCheckState } from "../types";
 
 type PolicyChecksCardProps = {
   policyChecks: PolicyCheck[];
+};
+
+const toneClasses: Record<PolicyCheckState, string> = {
+  Passed: "border-emerald-100 bg-emerald-50 text-emerald-700",
+  Pending: "border-amber-100 bg-amber-50 text-amber-700",
+  Blocked: "border-rose-100 bg-rose-50 text-rose-700",
 };
 
 export function PolicyChecksCard({ policyChecks }: PolicyChecksCardProps) {
@@ -22,10 +28,10 @@ export function PolicyChecksCard({ policyChecks }: PolicyChecksCardProps) {
 
           return (
             <div
-              key={check.label}
+              key={check.id}
               className="grid gap-3 rounded-lg border border-slate-200 bg-white p-3 sm:grid-cols-[auto_1fr_auto] sm:items-center"
             >
-              <div className={`flex h-9 w-9 items-center justify-center rounded-lg border ${check.tone}`}>
+              <div className={`flex h-9 w-9 items-center justify-center rounded-lg border ${toneClasses[check.state]}`}>
                 <Icon size={17} aria-hidden="true" />
               </div>
               <div className="min-w-0">

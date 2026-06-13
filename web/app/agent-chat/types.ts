@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import type { ToolCall } from "@/lib/chat/types";
 
 export type ChatMessage = {
   author: string;
@@ -10,6 +11,8 @@ export type ChatMessage = {
 export type HistoryMessage = {
   role: "user" | "assistant" | "tool";
   content: string | null;
+  tool_calls?: ToolCall[];
+  tool_call_id?: string;
 };
 
 export type ChatResponse = {
@@ -23,14 +26,17 @@ export type ChatResponse = {
 };
 
 export type IntentField = {
+  id: string;
   label: string;
   value: string;
 };
 
+export type PolicyCheckState = "Passed" | "Pending" | "Blocked";
+
 export type PolicyCheck = {
+  id: string;
   label: string;
   value: string;
-  state: string;
+  state: PolicyCheckState;
   icon: LucideIcon;
-  tone: string;
 };
