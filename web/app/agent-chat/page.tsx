@@ -14,6 +14,8 @@ import {
   XCircle,
 } from "lucide-react";
 import { useState } from "react";
+import ReactMarkdown from "react-markdown";
+import remarkGfm from "remark-gfm";
 
 type ChatMessage = {
   author: string;
@@ -168,7 +170,11 @@ export default function AgentChatPage() {
                     <p className={`text-xs font-semibold ${isUser ? "text-slate-300" : "text-slate-500"}`}>
                       {message.author}
                     </p>
-                    <p className="mt-2 text-sm leading-6">{message.body}</p>
+                    <div className={`mt-2 text-sm leading-6 [&_code]:rounded [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-xs [&_pre]:rounded-lg [&_pre]:p-3 ${isUser ? "[&_code]:bg-slate-800 [&_pre]:bg-slate-800" : "[&_code]:bg-slate-100 [&_pre]:bg-slate-100"}`}>
+                      <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                        {message.body}
+                      </ReactMarkdown>
+                    </div>
                   </div>
                   {isUser && (
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600">
