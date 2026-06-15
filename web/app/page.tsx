@@ -3,7 +3,11 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import { getAccount, getMint, TokenAccountNotFoundError } from "@solana/spl-token";
+import {
+  getAccount,
+  getMint,
+  TokenAccountNotFoundError,
+} from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import {
   Activity,
@@ -27,10 +31,7 @@ import {
   PROGRAM_ID_MISMATCH,
   RPC_URL,
 } from "../lib/solana/config";
-import {
-  deriveVaultPda,
-  deriveVaultTokenAccountPda,
-} from "../lib/solana/pda";
+import { deriveVaultPda, deriveVaultTokenAccountPda } from "../lib/solana/pda";
 import { useAgentSafeProgram } from "../lib/solana/program";
 import { fetchVault, type VaultAccount } from "../lib/solana/vault";
 
@@ -80,7 +81,8 @@ export default function Home() {
     if (!tokenMint) {
       setState({
         kind: "error",
-        message: "Set NEXT_PUBLIC_DEMO_TOKEN_MINT to a valid localnet token mint.",
+        message:
+          "Set NEXT_PUBLIC_DEMO_TOKEN_MINT to a valid localnet token mint.",
       });
       return;
     }
@@ -102,7 +104,10 @@ export default function Home() {
     }
 
     try {
-      setState({ kind: "loading", message: "Reading vault account from localnet..." });
+      setState({
+        kind: "loading",
+        message: "Reading vault account from localnet...",
+      });
 
       const vault = await fetchVault(program, addresses.vaultState);
 
@@ -117,13 +122,19 @@ export default function Home() {
       const mint = await getMint(connection, tokenMint);
 
       try {
-        const tokenAccount = await getAccount(connection, addresses.vaultTokenAccount);
+        const tokenAccount = await getAccount(
+          connection,
+          addresses.vaultTokenAccount,
+        );
 
         setState({
           kind: "ready",
           vault,
           mintDecimals: mint.decimals,
-          vaultBalance: formatTokenAmount(tokenAccount.amount.toString(), mint.decimals),
+          vaultBalance: formatTokenAmount(
+            tokenAccount.amount.toString(),
+            mint.decimals,
+          ),
         });
       } catch (error) {
         if (error instanceof TokenAccountNotFoundError) {
@@ -141,7 +152,10 @@ export default function Home() {
     } catch (error) {
       setState({
         kind: "error",
-        message: error instanceof Error ? error.message : "Failed to read vault state.",
+        message:
+          error instanceof Error
+            ? error.message
+            : "Failed to read vault state.",
       });
     }
   }, [addresses, connection, program, publicKey, tokenMint]);
@@ -160,12 +174,16 @@ export default function Home() {
         <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
           <div className="flex flex-wrap items-start justify-between gap-4">
             <div>
-              <p className="text-sm font-medium text-slate-500">Vault balance</p>
+              <p className="text-sm font-medium text-slate-500">
+                Vault balance
+              </p>
               <div className="mt-2 flex flex-wrap items-end gap-x-3 gap-y-1">
                 <span className="text-4xl font-semibold tracking-normal text-slate-950">
                   {state.kind === "ready" ? state.vaultBalance : "--"}
                 </span>
-                <span className="pb-1 text-lg font-semibold text-slate-500">demo token</span>
+                <span className="pb-1 text-lg font-semibold text-slate-500">
+                  demo token
+                </span>
               </div>
             </div>
             <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
@@ -178,7 +196,9 @@ export default function Home() {
             <Metric
               icon={Bot}
               label="Agent wallet"
-              value={state.kind === "ready" ? shortKey(state.vault.agent) : "--"}
+              value={
+                state.kind === "ready" ? shortKey(state.vault.agent) : "--"
+              }
             />
             <DailySpendMetric state={state} />
             <Metric
@@ -226,14 +246,24 @@ export default function Home() {
 
 type IconComponent = typeof ShieldCheck;
 
-function Metric({ icon: Icon, label, value }: { icon: IconComponent; label: string; value: string }) {
+function Metric({
+  icon: Icon,
+  label,
+  value,
+}: {
+  icon: IconComponent;
+  label: string;
+  value: string;
+}) {
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
       <div className="flex items-center gap-2 text-slate-500">
         <Icon size={17} aria-hidden="true" />
         <p className="text-sm font-medium">{label}</p>
       </div>
-      <p className="mt-2 truncate text-base font-semibold text-slate-950">{value}</p>
+      <p className="mt-2 truncate text-base font-semibold text-slate-950">
+        {value}
+      </p>
     </div>
   );
 }
@@ -248,8 +278,18 @@ function DailySpendMetric({ state }: { state: DashboardState }) {
       ? Number(formatTokenAmount(state.vault.dailyLimit, state.mintDecimals))
       : 0;
   const percent = limit > 0 ? Math.min((current / limit) * 100, 100) : 0;
-  const progressTone = percent >= 90 ? "bg-rose-500" : percent >= 70 ? "bg-amber-500" : "bg-emerald-500";
-  const textTone = percent >= 90 ? "text-rose-700" : percent >= 70 ? "text-amber-700" : "text-emerald-700";
+  const progressTone =
+    percent >= 90
+      ? "bg-rose-500"
+      : percent >= 70
+        ? "bg-amber-500"
+        : "bg-emerald-500";
+  const textTone =
+    percent >= 90
+      ? "text-rose-700"
+      : percent >= 70
+        ? "text-amber-700"
+        : "text-emerald-700";
 
   return (
     <div className="rounded-lg border border-slate-200 bg-slate-50 p-3">
@@ -263,10 +303,15 @@ function DailySpendMetric({ state }: { state: DashboardState }) {
             ? `${formatTokenAmount(state.vault.spentToday, state.mintDecimals)} / ${formatTokenAmount(state.vault.dailyLimit, state.mintDecimals)}`
             : "--"}
         </p>
-        <p className={`text-xs font-bold ${textTone}`}>{Math.round(percent)}%</p>
+        <p className={`text-xs font-bold ${textTone}`}>
+          {Math.round(percent)}%
+        </p>
       </div>
       <div className="mt-3 h-2.5 overflow-hidden rounded-full bg-slate-200">
-        <div className={`h-full rounded-full ${progressTone}`} style={{ width: `${percent}%` }} />
+        <div
+          className={`h-full rounded-full ${progressTone}`}
+          style={{ width: `${percent}%` }}
+        />
       </div>
     </div>
   );
@@ -281,9 +326,13 @@ function StatusCard({ state }: { state: DashboardState }) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-slate-500">Localnet status</p>
-          <h2 className="mt-1 text-lg font-semibold text-slate-950">{content.title}</h2>
+          <h2 className="mt-1 text-lg font-semibold text-slate-950">
+            {content.title}
+          </h2>
         </div>
-        <div className={`flex h-10 w-10 items-center justify-center rounded-lg border ${content.tone}`}>
+        <div
+          className={`flex h-10 w-10 items-center justify-center rounded-lg border ${content.tone}`}
+        >
           <Icon size={19} aria-hidden="true" />
         </div>
       </div>
@@ -345,7 +394,9 @@ function PolicyCard({
       label: "Last daily reset",
       value:
         state.kind === "ready"
-          ? new Date(state.vault.lastResetTime.toNumber() * 1000).toLocaleString()
+          ? new Date(
+              state.vault.lastResetTime.toNumber() * 1000,
+            ).toLocaleString()
           : "--",
       state: state.kind === "ready" ? "On-chain" : "Pending",
     },
@@ -356,17 +407,26 @@ function PolicyCard({
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-slate-500">Policy</p>
-          <h2 className="mt-1 text-lg font-semibold text-slate-950">Active constraints</h2>
+          <h2 className="mt-1 text-lg font-semibold text-slate-950">
+            Active constraints
+          </h2>
         </div>
         <ShieldCheck className="text-slate-500" size={21} aria-hidden="true" />
       </div>
 
       <div className="mt-5 divide-y divide-slate-100">
         {rules.map((rule) => (
-          <div key={rule.label} className="grid grid-cols-[1fr_auto] gap-3 py-3 first:pt-0 last:pb-0">
+          <div
+            key={rule.label}
+            className="grid grid-cols-[1fr_auto] gap-3 py-3 first:pt-0 last:pb-0"
+          >
             <div className="min-w-0">
-              <p className="text-sm font-semibold text-slate-950">{rule.label}</p>
-              <p className="mt-1 break-words font-mono text-sm text-slate-500">{rule.value}</p>
+              <p className="text-sm font-semibold text-slate-950">
+                {rule.label}
+              </p>
+              <p className="mt-1 break-words font-mono text-sm text-slate-500">
+                {rule.value}
+              </p>
             </div>
             <span className="self-start rounded-md border border-slate-200 bg-slate-50 px-2 py-1 text-xs font-semibold text-slate-600">
               {rule.state}
@@ -389,8 +449,14 @@ function ConnectionCard({
     { label: "RPC", value: RPC_URL },
     { label: "Program", value: PROGRAM_ID.toBase58() },
     { label: "Token mint", value: tokenMint?.toBase58() ?? "missing env" },
-    { label: "Vault PDA", value: addresses?.vaultState.toBase58() ?? "not derived" },
-    { label: "Token vault PDA", value: addresses?.vaultTokenAccount.toBase58() ?? "not derived" },
+    {
+      label: "Vault PDA",
+      value: addresses?.vaultState.toBase58() ?? "not derived",
+    },
+    {
+      label: "Token vault PDA",
+      value: addresses?.vaultTokenAccount.toBase58() ?? "not derived",
+    },
   ];
 
   return (
@@ -398,16 +464,23 @@ function ConnectionCard({
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-slate-500">Connection</p>
-          <h2 className="mt-1 text-lg font-semibold text-slate-950">Anchor client inputs</h2>
+          <h2 className="mt-1 text-lg font-semibold text-slate-950">
+            Anchor client inputs
+          </h2>
         </div>
         <Activity className="text-slate-500" size={21} aria-hidden="true" />
       </div>
 
       <div className="mt-5 divide-y divide-slate-100 rounded-lg border border-slate-200 bg-slate-50 px-4">
         {rows.map((row) => (
-          <div key={row.label} className="grid grid-cols-[0.36fr_1fr] gap-3 py-3 text-sm">
+          <div
+            key={row.label}
+            className="grid grid-cols-[0.36fr_1fr] gap-3 py-3 text-sm"
+          >
             <span className="font-medium text-slate-500">{row.label}</span>
-            <span className="min-w-0 break-all font-mono font-semibold text-slate-950">{row.value}</span>
+            <span className="min-w-0 break-all font-mono font-semibold text-slate-950">
+              {row.value}
+            </span>
           </div>
         ))}
       </div>
@@ -419,7 +492,9 @@ function AddressBadge({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex w-fit max-w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm sm:ml-auto">
       <span className="font-medium text-slate-500">{label}</span>
-      <span className="min-w-0 truncate font-mono font-semibold text-slate-950">{value}</span>
+      <span className="min-w-0 truncate font-mono font-semibold text-slate-950">
+        {value}
+      </span>
       <button
         className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
         type="button"

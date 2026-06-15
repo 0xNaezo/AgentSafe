@@ -23,11 +23,15 @@ export function parseTokenAmount(value: string, decimals: number) {
   return new BN(units || "0", 10);
 }
 
-export function formatTokenAmount(amount: BN | string | number, decimals: number) {
+export function formatTokenAmount(
+  amount: BN | string | number,
+  decimals: number,
+) {
   validateDecimals(decimals);
 
   const raw = amount.toString();
-  const isNegative = amount instanceof BN ? amount.isNeg() : raw.startsWith("-");
+  const isNegative =
+    amount instanceof BN ? amount.isNeg() : raw.startsWith("-");
 
   if (isNegative) {
     throw new RangeError("amount must be non-negative");

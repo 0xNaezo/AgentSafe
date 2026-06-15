@@ -4,7 +4,14 @@ import { Wallet as WalletIcon } from "lucide-react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import type { WalletName } from "@solana/wallet-adapter-base";
 import type { PublicKey } from "@solana/web3.js";
-import { useEffect, useId, useMemo, useRef, useState, type KeyboardEvent } from "react";
+import {
+  useEffect,
+  useId,
+  useMemo,
+  useRef,
+  useState,
+  type KeyboardEvent,
+} from "react";
 import { useHasMounted } from "../hooks/use-has-mounted";
 
 export function WalletConnect() {
@@ -129,7 +136,8 @@ export function WalletConnect() {
       const currentPosition = activePosition === -1 ? 0 : activePosition;
       const offset = event.key === "ArrowDown" ? 1 : -1;
       const nextPosition =
-        (currentPosition + offset + actionableIndexes.length) % actionableIndexes.length;
+        (currentPosition + offset + actionableIndexes.length) %
+        actionableIndexes.length;
       const nextIndex = actionableIndexes[nextPosition];
 
       setActiveIndex(nextIndex);
@@ -137,7 +145,11 @@ export function WalletConnect() {
       return;
     }
 
-    if (event.key === "Enter" || event.key === " " || event.key === "Spacebar") {
+    if (
+      event.key === "Enter" ||
+      event.key === " " ||
+      event.key === "Spacebar"
+    ) {
       event.preventDefault();
       menuItemRefs.current[activeIndex]?.click();
     }
@@ -197,7 +209,9 @@ export function WalletConnect() {
                   role="menuitem"
                   tabIndex={activeIndex === index && !isUnsupported ? 0 : -1}
                   type="button"
-                  onClick={() => handleSelectWallet(walletOption.adapter.name as WalletName)}
+                  onClick={() =>
+                    handleSelectWallet(walletOption.adapter.name as WalletName)
+                  }
                   onFocus={() => {
                     if (!isUnsupported) {
                       setActiveIndex(index);

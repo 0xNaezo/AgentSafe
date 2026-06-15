@@ -401,15 +401,15 @@ The policy model is deliberately simple in the MVP.
 
 Planned policy dimensions:
 
-| Policy | Purpose |
-| --- | --- |
-| Assigned agent | Only one approved agent wallet may initiate payments |
-| Token mint lock | The vault controls one token type in the MVP |
-| Per-payment limit | Prevents a single large unauthorized payment |
-| Daily spending limit | Caps total spending in a time window |
-| Recipient whitelist | Restricts where funds may be sent |
-| Manual approval threshold | Converts larger requests into pending approvals |
-| Pause switch | Lets the owner immediately stop agent activity |
+| Policy                    | Purpose                                              |
+| ------------------------- | ---------------------------------------------------- |
+| Assigned agent            | Only one approved agent wallet may initiate payments |
+| Token mint lock           | The vault controls one token type in the MVP         |
+| Per-payment limit         | Prevents a single large unauthorized payment         |
+| Daily spending limit      | Caps total spending in a time window                 |
+| Recipient whitelist       | Restricts where funds may be sent                    |
+| Manual approval threshold | Converts larger requests into pending approvals      |
+| Pause switch              | Lets the owner immediately stop agent activity       |
 
 The MVP uses token-denominated limits. For example, a USDC vault can express limits directly in USDC units without requiring a price oracle.
 

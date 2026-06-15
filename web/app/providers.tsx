@@ -1,7 +1,10 @@
 "use client";
 
 import type { Adapter } from "@solana/wallet-adapter-base";
-import { ConnectionProvider, WalletProvider } from "@solana/wallet-adapter-react";
+import {
+  ConnectionProvider,
+  WalletProvider,
+} from "@solana/wallet-adapter-react";
 import {
   PhantomWalletAdapter,
   UnsafeBurnerWalletAdapter,
@@ -24,7 +27,9 @@ export function Providers({ children }: { children: ReactNode }) {
 
   return (
     <ConnectionProvider endpoint={RPC_URL}>
-      <WalletProvider wallets={wallets} autoConnect>{children}</WalletProvider>
+      <WalletProvider wallets={wallets} autoConnect>
+        {children}
+      </WalletProvider>
     </ConnectionProvider>
   );
 }

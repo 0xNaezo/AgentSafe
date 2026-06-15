@@ -2,7 +2,11 @@
 
 import { AnchorProvider, Program, type Idl } from "@anchor-lang/core";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
-import type { PublicKey, Transaction, VersionedTransaction } from "@solana/web3.js";
+import type {
+  PublicKey,
+  Transaction,
+  VersionedTransaction,
+} from "@solana/web3.js";
 import { useMemo } from "react";
 
 import type { AnchorProgram } from "../../types/anchor_program";
@@ -10,8 +14,12 @@ import { idl } from "./config";
 
 type BrowserAnchorWallet = {
   publicKey: PublicKey;
-  signTransaction<T extends Transaction | VersionedTransaction>(transaction: T): Promise<T>;
-  signAllTransactions<T extends Transaction | VersionedTransaction>(transactions: T[]): Promise<T[]>;
+  signTransaction<T extends Transaction | VersionedTransaction>(
+    transaction: T,
+  ): Promise<T>;
+  signAllTransactions<T extends Transaction | VersionedTransaction>(
+    transactions: T[],
+  ): Promise<T[]>;
 };
 
 export type AgentSafeProgram = Program<AnchorProgram>;

@@ -20,7 +20,11 @@ export function extractToolCalls(choice: OpenRouterChoice): ToolCallResult[] {
 
     try {
       const parsedArgs = JSON.parse(toolFunction.arguments) as unknown;
-      if (!parsedArgs || typeof parsedArgs !== "object" || Array.isArray(parsedArgs)) {
+      if (
+        !parsedArgs ||
+        typeof parsedArgs !== "object" ||
+        Array.isArray(parsedArgs)
+      ) {
         continue;
       }
 
