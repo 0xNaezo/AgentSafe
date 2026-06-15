@@ -31,7 +31,9 @@ export async function fetchVault(
   program: AgentSafeProgram,
   vaultState: PublicKey,
 ) {
-  return program.account.vault.fetchNullable(vaultState) as Promise<VaultAccount | null>;
+  return program.account.vault.fetchNullable(
+    vaultState,
+  ) as Promise<VaultAccount | null>;
 }
 
 export async function initializeVault(

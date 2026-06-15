@@ -24,7 +24,9 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
             : "border-slate-200 bg-slate-50 text-slate-800"
         }`}
       >
-        <p className={`text-xs font-semibold ${isUser ? "text-slate-300" : "text-slate-500"}`}>
+        <p
+          className={`text-xs font-semibold ${isUser ? "text-slate-300" : "text-slate-500"}`}
+        >
           {message.author}
         </p>
         <div
@@ -34,7 +36,9 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
               : "[&_code]:bg-slate-100 [&_pre]:bg-slate-100"
           }`}
         >
-          <ReactMarkdown remarkPlugins={[remarkGfm]}>{message.body}</ReactMarkdown>
+          <ReactMarkdown remarkPlugins={[remarkGfm]}>
+            {message.body}
+          </ReactMarkdown>
         </div>
       </div>
       {isUser && (

@@ -8,8 +8,7 @@ export const PROGRAM_ID = new PublicKey(
 );
 export const RPC_URL =
   process.env.NEXT_PUBLIC_SOLANA_RPC_URL ?? DEFAULT_RPC_URL;
-export const DEMO_TOKEN_MINT =
-  process.env.NEXT_PUBLIC_DEMO_TOKEN_MINT ?? "";
+export const DEMO_TOKEN_MINT = process.env.NEXT_PUBLIC_DEMO_TOKEN_MINT ?? "";
 
 export const IDL_PROGRAM_ID = new PublicKey(idl.address);
 export const PROGRAM_ID_MISMATCH = !PROGRAM_ID.equals(IDL_PROGRAM_ID);

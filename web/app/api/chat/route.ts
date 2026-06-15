@@ -19,7 +19,9 @@ function isChatMessage(value: unknown): value is ChatMessage {
 
   const message = value as Partial<ChatMessage>;
   return (
-    (message.role === "user" || message.role === "assistant" || message.role === "tool") &&
+    (message.role === "user" ||
+      message.role === "assistant" ||
+      message.role === "tool") &&
     (typeof message.content === "string" || message.content === null)
   );
 }
@@ -81,7 +83,10 @@ export async function POST(request: Request) {
     }
 
     if (!process.env.OPENROUTER_API_KEY) {
-      return NextResponse.json({ error: "OPENROUTER_API_KEY is not configured" }, { status: 503 });
+      return NextResponse.json(
+        { error: "OPENROUTER_API_KEY is not configured" },
+        { status: 503 },
+      );
     }
 
     const result = await completeChat(parsedMessages.messages);
@@ -89,10 +94,19 @@ export async function POST(request: Request) {
   } catch (error) {
     console.error("Chat API error:", error);
 
-    if (error instanceof Error && error.message.startsWith("OpenRouter API error")) {
-      return NextResponse.json({ error: "Upstream service error" }, { status: 502 });
+    if (
+      error instanceof Error &&
+      error.message.startsWith("OpenRouter API error")
+    ) {
+      return NextResponse.json(
+        { error: "Upstream service error" },
+        { status: 502 },
+      );
     }
 
-    return NextResponse.json({ error: "Internal server error" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
   }
 }

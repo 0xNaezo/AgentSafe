@@ -59,7 +59,8 @@ export function AgentChat() {
       const data = (await res.json().catch(() => ({}))) as ChatResponse;
 
       if (!res.ok) {
-        const serverError = data.error ?? `Request failed with status ${res.status}`;
+        const serverError =
+          data.error ?? `Request failed with status ${res.status}`;
         setMessages((prev) => [
           ...prev,
           {

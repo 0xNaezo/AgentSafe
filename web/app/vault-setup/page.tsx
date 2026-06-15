@@ -108,7 +108,9 @@ export default function VaultSetupPage() {
       }
 
       if (PROGRAM_ID_MISMATCH) {
-        throw new Error("Configured program id does not match the bundled IDL.");
+        throw new Error(
+          "Configured program id does not match the bundled IDL.",
+        );
       }
 
       if (!agent) {
@@ -181,8 +183,12 @@ export default function VaultSetupPage() {
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-medium text-slate-500">Create vault</p>
-                <h2 className="mt-1 text-lg font-semibold text-slate-950">Owner and agent</h2>
+                <p className="text-sm font-medium text-slate-500">
+                  Create vault
+                </p>
+                <h2 className="mt-1 text-lg font-semibold text-slate-950">
+                  Owner and agent
+                </h2>
               </div>
               <div className="inline-flex items-center gap-2 rounded-lg border border-emerald-100 bg-emerald-50 px-3 py-2 text-sm font-medium text-emerald-700">
                 <ShieldCheck size={16} aria-hidden="true" />
@@ -191,21 +197,39 @@ export default function VaultSetupPage() {
             </div>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
-              <Field label="Vault owner wallet" htmlFor="owner-wallet" icon={Wallet}>
+              <Field
+                label="Vault owner wallet"
+                htmlFor="owner-wallet"
+                icon={Wallet}
+              >
                 <input
                   id="owner-wallet"
                   className="field-control font-mono"
-                  value={ownerPublicKey?.toBase58() ?? "Connect wallet to fill owner address"}
+                  value={
+                    ownerPublicKey?.toBase58() ??
+                    "Connect wallet to fill owner address"
+                  }
                   readOnly
                 />
               </Field>
-              <Field label="Vault Address (PDA)" htmlFor="vault-address" icon={LockKeyhole}>
+              <Field
+                label="Vault Address (PDA)"
+                htmlFor="vault-address"
+                icon={LockKeyhole}
+              >
                 <ReadonlyAddress
                   id="vault-address"
-                  value={vaultAddresses?.vaultState.toBase58() ?? "Connect wallet and enter mint"}
+                  value={
+                    vaultAddresses?.vaultState.toBase58() ??
+                    "Connect wallet and enter mint"
+                  }
                 />
               </Field>
-              <Field label="Assigned agent wallet" htmlFor="agent-wallet" icon={Bot}>
+              <Field
+                label="Assigned agent wallet"
+                htmlFor="agent-wallet"
+                icon={Bot}
+              >
                 <input
                   id="agent-wallet"
                   name="agent-wallet"
@@ -215,7 +239,11 @@ export default function VaultSetupPage() {
                   placeholder="Agent wallet public key"
                 />
               </Field>
-              <Field label="Vault token mint" htmlFor="token-mint" icon={LockKeyhole}>
+              <Field
+                label="Vault token mint"
+                htmlFor="token-mint"
+                icon={LockKeyhole}
+              >
                 <input
                   id="token-mint"
                   name="token-mint"
@@ -225,14 +253,26 @@ export default function VaultSetupPage() {
                   placeholder="Local demo token mint public key"
                 />
               </Field>
-              <Field label="Token Vault Account (PDA)" htmlFor="token-vault-address" icon={LockKeyhole}>
+              <Field
+                label="Token Vault Account (PDA)"
+                htmlFor="token-vault-address"
+                icon={LockKeyhole}
+              >
                 <ReadonlyAddress
                   id="token-vault-address"
-                  value={vaultAddresses?.vaultTokenAccount.toBase58() ?? "Derived after mint is valid"}
+                  value={
+                    vaultAddresses?.vaultTokenAccount.toBase58() ??
+                    "Derived after mint is valid"
+                  }
                 />
               </Field>
               <Field label="RPC endpoint" htmlFor="rpc-endpoint" icon={Info}>
-                <input id="rpc-endpoint" className="field-control font-mono" value={RPC_URL} readOnly />
+                <input
+                  id="rpc-endpoint"
+                  className="field-control font-mono"
+                  value={RPC_URL}
+                  readOnly
+                />
               </Field>
             </div>
           </div>
@@ -240,10 +280,18 @@ export default function VaultSetupPage() {
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-medium text-slate-500">Policy model</p>
-                <h2 className="mt-1 text-lg font-semibold text-slate-950">Spending limits</h2>
+                <p className="text-sm font-medium text-slate-500">
+                  Policy model
+                </p>
+                <h2 className="mt-1 text-lg font-semibold text-slate-950">
+                  Spending limits
+                </h2>
               </div>
-              <ListChecks className="text-slate-500" size={21} aria-hidden="true" />
+              <ListChecks
+                className="text-slate-500"
+                size={21}
+                aria-hidden="true"
+              />
             </div>
 
             <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -261,22 +309,28 @@ export default function VaultSetupPage() {
 
             <div className="mt-5 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
               <div>
-                <p className="text-sm font-semibold text-slate-950">Pause switch</p>
+                <p className="text-sm font-semibold text-slate-950">
+                  Pause switch
+                </p>
                 <p className="mt-1 text-sm leading-6 text-slate-600">
-                  The current on-chain MVP stores spending limits only; pause can be added once policy state grows.
+                  The current on-chain MVP stores spending limits only; pause
+                  can be added once policy state grows.
                 </p>
               </div>
               <label className="inline-flex w-fit items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm">
-                <input className="h-4 w-4 accent-slate-950" type="checkbox" name="pause-vault" disabled />
+                <input
+                  className="h-4 w-4 accent-slate-950"
+                  type="checkbox"
+                  name="pause-vault"
+                  disabled
+                />
                 <Pause size={16} aria-hidden="true" />
                 Paused
               </label>
             </div>
           </div>
 
-          {submitState.kind !== "idle" && (
-            <StatusPanel state={submitState} />
-          )}
+          {submitState.kind !== "idle" && <StatusPanel state={submitState} />}
 
           <div className="flex flex-wrap justify-end gap-2 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
             <button
@@ -311,21 +365,35 @@ export default function VaultSetupPage() {
                 <Info size={19} aria-hidden="true" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-500">MVP constraint</p>
-                <h2 className="text-lg font-semibold text-slate-950">One mint, one policy</h2>
+                <p className="text-sm font-medium text-slate-500">
+                  MVP constraint
+                </p>
+                <h2 className="text-lg font-semibold text-slate-950">
+                  One mint, one policy
+                </h2>
               </div>
             </div>
             <p className="mt-4 text-sm leading-6 text-slate-600">
-              This form calls the Anchor `initialize` instruction. It creates the vault state account and the program-owned token vault account.
+              This form calls the Anchor `initialize` instruction. It creates
+              the vault state account and the program-owned token vault account.
             </p>
           </div>
 
           <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-medium text-slate-500">Policy checklist</p>
+            <p className="text-sm font-medium text-slate-500">
+              Policy checklist
+            </p>
             <div className="mt-4 divide-y divide-slate-100">
               {setupChecks.map((check) => (
-                <div key={check} className="flex gap-3 py-3 first:pt-0 last:pb-0">
-                  <ShieldCheck className="mt-0.5 shrink-0 text-emerald-700" size={17} aria-hidden="true" />
+                <div
+                  key={check}
+                  className="flex gap-3 py-3 first:pt-0 last:pb-0"
+                >
+                  <ShieldCheck
+                    className="mt-0.5 shrink-0 text-emerald-700"
+                    size={17}
+                    aria-hidden="true"
+                  />
                   <p className="text-sm leading-6 text-slate-700">{check}</p>
                 </div>
               ))}
@@ -347,7 +415,10 @@ type FieldProps = {
 function Field({ children, htmlFor, icon: Icon, label }: FieldProps) {
   return (
     <div>
-      <label className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700" htmlFor={htmlFor}>
+      <label
+        className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700"
+        htmlFor={htmlFor}
+      >
         <Icon size={16} aria-hidden="true" />
         {label}
       </label>
@@ -369,7 +440,9 @@ function LimitField({
 
   return (
     <label className="block" htmlFor={inputId}>
-      <span className="mb-2 block text-sm font-semibold text-slate-700">{label}</span>
+      <span className="mb-2 block text-sm font-semibold text-slate-700">
+        {label}
+      </span>
       <div className="grid grid-cols-[1fr_auto] overflow-hidden rounded-lg border border-slate-200 bg-white focus-within:border-slate-400">
         <input
           id={inputId}
@@ -408,7 +481,11 @@ function ReadonlyAddress({ id, value }: { id: string; value: string }) {
   );
 }
 
-function StatusPanel({ state }: { state: Exclude<SubmitState, { kind: "idle" }> }) {
+function StatusPanel({
+  state,
+}: {
+  state: Exclude<SubmitState, { kind: "idle" }>;
+}) {
   const tone =
     state.kind === "error"
       ? "border-rose-200 bg-rose-50 text-rose-800"

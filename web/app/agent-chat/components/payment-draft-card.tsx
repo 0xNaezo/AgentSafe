@@ -11,14 +11,19 @@ export function PaymentDraftCard({ intentFields }: PaymentDraftCardProps) {
       <div className="flex items-center justify-between gap-3">
         <div>
           <p className="text-sm font-medium text-slate-500">Parsed intent</p>
-          <h2 className="mt-1 text-lg font-semibold text-slate-950">Payment draft</h2>
+          <h2 className="mt-1 text-lg font-semibold text-slate-950">
+            Payment draft
+          </h2>
         </div>
         <FileText className="text-slate-500" size={21} aria-hidden="true" />
       </div>
 
       <div className="mt-5 divide-y divide-slate-100 rounded-lg border border-slate-200 bg-slate-50 px-4">
         {intentFields.map((field) => (
-          <div key={field.id} className="grid grid-cols-[0.7fr_1fr] gap-3 py-3 text-sm">
+          <div
+            key={field.id}
+            className="grid grid-cols-[0.7fr_1fr] gap-3 py-3 text-sm"
+          >
             <span className="font-medium text-slate-500">{field.label}</span>
             <span className="min-w-0 break-words font-semibold text-slate-950">
               {field.value}

@@ -18,16 +18,37 @@ type AppShellProps = {
   children: ReactNode;
 };
 
-const navItems: Array<{ href: AppRoute; label: string; title: string; icon: LucideIcon }> = [
-  { href: "/", label: "Dashboard", title: "Policy Vault Dashboard", icon: LayoutDashboard },
-  { href: "/vault-setup", label: "Vault setup", title: "Vault Setup", icon: SlidersHorizontal },
-  { href: "/agent-chat", label: "Agent chat", title: "Agent Chat", icon: MessagesSquare },
+const navItems: Array<{
+  href: AppRoute;
+  label: string;
+  title: string;
+  icon: LucideIcon;
+}> = [
+  {
+    href: "/",
+    label: "Dashboard",
+    title: "Policy Vault Dashboard",
+    icon: LayoutDashboard,
+  },
+  {
+    href: "/vault-setup",
+    label: "Vault setup",
+    title: "Vault Setup",
+    icon: SlidersHorizontal,
+  },
+  {
+    href: "/agent-chat",
+    label: "Agent chat",
+    title: "Agent Chat",
+    icon: MessagesSquare,
+  },
 ];
 
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const activeHref = getActiveHref(pathname);
-  const activeItem = navItems.find((item) => item.href === activeHref) ?? navItems[0];
+  const activeItem =
+    navItems.find((item) => item.href === activeHref) ?? navItems[0];
 
   return (
     <main className="min-h-screen bg-[#f7f8fb] text-slate-950">

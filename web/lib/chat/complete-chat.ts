@@ -1,10 +1,16 @@
 import { callOpenRouter } from "./openrouter";
 import { extractToolCalls } from "./tool-calls";
-import type { ChatCompletionResult, ChatMessage, ToolCallResult } from "./types";
+import type {
+  ChatCompletionResult,
+  ChatMessage,
+  ToolCallResult,
+} from "./types";
 
 const MAX_TOOL_CALL_ITERATIONS = 10;
 
-export async function completeChat(messages: ChatMessage[]): Promise<ChatCompletionResult> {
+export async function completeChat(
+  messages: ChatMessage[],
+): Promise<ChatCompletionResult> {
   const allToolCalls: ToolCallResult[] = [];
   let iteration = 0;
 
@@ -19,7 +25,11 @@ export async function completeChat(messages: ChatMessage[]): Promise<ChatComplet
     }
 
     if (!choice) {
-      return { reply: "No response from model", toolCalls: allToolCalls, messages };
+      return {
+        reply: "No response from model",
+        toolCalls: allToolCalls,
+        messages,
+      };
     }
 
     if (choice.finish_reason === "stop") {
