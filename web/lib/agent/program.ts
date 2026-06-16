@@ -1,5 +1,5 @@
 import { Connection } from "@solana/web3.js";
-import { Wallet, AnchorProvider, Program } from "@anchor-lang/core";
+import { AnchorProvider, Program } from "@coral-xyz/anchor";
 import type { AnchorProgram } from "../../types/anchor_program";
 import idl from "../solana/anchor-program-idl.json";
 import { agentKeypair } from "./signer";
@@ -12,7 +12,17 @@ function createAnchorProgram(): Program<AnchorProgram> {
   }
 
   const connection = new Connection(publicSolanaRpcUrl);
-  const agentWallet = new Wallet(agentKeypair);
+  const agentWallet = {
+    publicKey: agentKeypair.publicKey,
+    signTransaction: async (tx: any) => {
+      tx.partialSign(agentKeypair);
+      return tx;
+    },
+    signAllTransactions: async (txs: any[]) => {
+      txs.forEach((tx) => tx.partialSign(agentKeypair));
+      return txs;
+    },
+  };
 
   const anchorProvider = new AnchorProvider(connection, agentWallet, {
     commitment: "confirmed",
