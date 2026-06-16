@@ -2,7 +2,7 @@ import { chatTools } from "./tools";
 import type { ChatMessage, OpenRouterChoice, OpenRouterResult } from "./types";
 
 const OPENROUTER_MODEL = "deepseek/deepseek-v4-flash";
-const DEFAULT_OPENROUTER_TIMEOUT_MS = 10_000;
+const DEFAULT_OPENROUTER_TIMEOUT_MS = 30_000;
 
 function getOpenRouterTimeoutMs() {
   const timeoutMs = Number(process.env.OPENROUTER_TIMEOUT_MS);
