@@ -2,8 +2,8 @@ export const chatTools = [
   {
     type: "function" as const,
     function: {
-      name: "transfer",
-      description: "Transfer USDC to a recipient",
+      name: "execute_payment",
+      description: "Execute a policy-controlled USDC payment from the vault",
       parameters: {
         type: "object",
         properties: {

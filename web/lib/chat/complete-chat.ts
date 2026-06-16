@@ -1,7 +1,9 @@
 import { callOpenRouter } from "./openrouter";
 import { extractToolCalls } from "./tool-calls";
+import { executeToolCall } from "./tool-executor";
 import type {
   ChatCompletionResult,
+  ChatExecutionContext,
   ChatMessage,
   ToolCallResult,
 } from "./types";
@@ -10,6 +12,7 @@ const MAX_TOOL_CALL_ITERATIONS = 10;
 
 export async function completeChat(
   messages: ChatMessage[],
+  executionContext: ChatExecutionContext,
 ): Promise<ChatCompletionResult> {
   const allToolCalls: ToolCallResult[] = [];
   let iteration = 0;
@@ -55,10 +58,12 @@ export async function completeChat(
       });
 
       for (const tc of toolCalls) {
+        const toolResult = await executeToolCall(tc, executionContext);
+
         messages.push({
           role: "tool",
           tool_call_id: tc.id,
-          content: '{"executed": false, "reason": "not_executed"}',
+          content: JSON.stringify(toolResult),
         });
       }
 
