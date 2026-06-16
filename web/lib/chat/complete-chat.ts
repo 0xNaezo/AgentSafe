@@ -10,6 +10,42 @@ import type {
 
 const MAX_TOOL_CALL_ITERATIONS = 10;
 
+function summarizeToolResults(messages: ChatMessage[]) {
+  const toolResults = messages
+    .filter((message) => message.role === "tool" && message.content)
+    .map((message) => message.content);
+
+  if (toolResults.length === 0) {
+    return null;
+  }
+
+  const latestResult = toolResults.at(-1);
+  if (!latestResult) {
+    return null;
+  }
+
+  try {
+    const parsed = JSON.parse(latestResult) as unknown;
+
+    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+      return null;
+    }
+
+    const result = parsed as Record<string, unknown>;
+    if (result.executed === true && typeof result.signature === "string") {
+      return `Payment executed. Transaction signature: ${result.signature}`;
+    }
+
+    if (result.executed === false && typeof result.reason === "string") {
+      return `Payment was not executed: ${result.reason}`;
+    }
+  } catch {
+    return null;
+  }
+
+  return null;
+}
+
 export async function completeChat(
   messages: ChatMessage[],
   executionContext: ChatExecutionContext,
@@ -24,6 +60,16 @@ export async function completeChat(
 
     if (!ok) {
       console.error("OpenRouter error:", status, errorBody);
+      const fallbackReply = summarizeToolResults(messages);
+
+      if (fallbackReply) {
+        return {
+          reply: fallbackReply,
+          toolCalls: allToolCalls,
+          messages,
+        };
+      }
+
       throw new Error(`OpenRouter API error: ${status}`);
     }
 

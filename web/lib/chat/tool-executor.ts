@@ -19,6 +19,14 @@ type ToolExecutionResult =
       reason: string;
     };
 
+function getErrorMessage(error: unknown) {
+  if (error instanceof Error && error.message) {
+    return error.message;
+  }
+
+  return "Payment execution failed";
+}
+
 function isRecord(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
@@ -47,6 +55,17 @@ function parseRecipient(value: unknown) {
   } catch {
     return { ok: false as const, error: "address must be a valid public key" };
   }
+}
+
+function validateRecipientOwner(recipient: PublicKey) {
+  if (!PublicKey.isOnCurve(recipient.toBuffer())) {
+    return {
+      ok: false as const,
+      error: "recipient must be a standard wallet address, not a PDA",
+    };
+  }
+
+  return { ok: true as const };
 }
 
 function parseAmount(value: unknown) {
@@ -79,35 +98,45 @@ export async function executeToolCall(
     return { executed: false, reason: recipient.error };
   }
 
+  const validRecipientOwner = validateRecipientOwner(recipient.recipient);
+  if (!validRecipientOwner.ok) {
+    return { executed: false, reason: validRecipientOwner.error };
+  }
+
   const amount = parseAmount(parsedArguments.args.amount);
   if (!amount.ok) {
     return { executed: false, reason: amount.error };
   }
 
-  const mint = await getMint(
-    program.provider.connection,
-    context.tokenMint,
-    "confirmed",
-    TOKEN_PROGRAM_ID,
-  );
-  const amountUnits = parseTokenAmount(amount.amount, mint.decimals);
+  try {
+    const mint = await getMint(
+      program.provider.connection,
+      context.tokenMint,
+      "confirmed",
+      TOKEN_PROGRAM_ID,
+    );
+    const amountUnits = parseTokenAmount(amount.amount, mint.decimals);
 
-  if (amountUnits.toString() === "0") {
-    return { executed: false, reason: "amount must be greater than zero" };
+    if (amountUnits.toString() === "0") {
+      return { executed: false, reason: "amount must be greater than zero" };
+    }
+
+    const signature = await executePaymentWithAgent(
+      context.owner,
+      context.tokenMint,
+      recipient.recipient,
+      amountUnits,
+    );
+
+    return {
+      executed: true,
+      signature,
+      tool: "execute_payment",
+      recipient: recipient.recipient.toBase58(),
+      amount: amount.amount,
+    };
+  } catch (error) {
+    console.error("Payment tool execution failed:", error);
+    return { executed: false, reason: getErrorMessage(error) };
   }
-
-  const signature = await executePaymentWithAgent(
-    context.owner,
-    context.tokenMint,
-    recipient.recipient,
-    amountUnits,
-  );
-
-  return {
-    executed: true,
-    signature,
-    tool: "execute_payment",
-    recipient: recipient.recipient.toBase58(),
-    amount: amount.amount,
-  };
 }
