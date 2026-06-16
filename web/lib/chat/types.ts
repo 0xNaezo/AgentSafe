@@ -1,6 +1,13 @@
+import type { PublicKey } from "@solana/web3.js";
+
 export type ToolCallResult = {
   name: string;
   args: Record<string, unknown>;
+};
+
+export type ChatExecutionContext = {
+  owner: PublicKey;
+  tokenMint: PublicKey;
 };
 
 export type ChatMessage = {

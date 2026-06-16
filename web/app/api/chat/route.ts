@@ -1,9 +1,11 @@
 import { NextResponse } from "next/server";
 import { completeChat } from "@/lib/chat/complete-chat";
 import type { ChatMessage } from "@/lib/chat/types";
+import { parseExecutionContext } from "./parse-context";
 
 type ChatRequestBody = {
   messages?: unknown;
+  context?: unknown;
 };
 
 const MAX_MESSAGES = 40;
@@ -88,8 +90,19 @@ export async function POST(request: Request) {
         { status: 503 },
       );
     }
+    const executionContext = parseExecutionContext(body.context);
 
-    const result = await completeChat(parsedMessages.messages);
+    if (!executionContext.ok) {
+      return NextResponse.json(
+        { error: executionContext.error },
+        { status: executionContext.status },
+      );
+    }
+
+    const result = await completeChat(
+      parsedMessages.messages,
+      executionContext.context,
+    );
     return NextResponse.json(result);
   } catch (error) {
     console.error("Chat API error:", error);

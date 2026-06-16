@@ -1,7 +1,9 @@
 "use client";
 
 import { Bot, User, Wrench } from "lucide-react";
+import { useWallet } from "@solana/wallet-adapter-react";
 import { useEffect, useRef, useState } from "react";
+import { DEMO_TOKEN_MINT } from "@/lib/solana/config";
 import { AgentChatSidebar } from "./agent-chat-sidebar";
 import { ChatPanel } from "./chat-panel";
 import type { ChatMessage, ChatResponse, HistoryMessage } from "../types";
@@ -15,6 +17,7 @@ function getErrorMessage(error: unknown) {
 }
 
 export function AgentChat() {
+  const { publicKey } = useWallet();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [history, setHistory] = useState<HistoryMessage[]>([]);
   const [input, setInput] = useState("");
@@ -31,6 +34,32 @@ export function AgentChat() {
 
   async function sendMessage(content: string) {
     if (!content.trim() || loading) return;
+
+    if (!publicKey) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          author: "AgentSafe Agent",
+          body: "Error: connect the vault owner wallet before sending a payment request.",
+          icon: Bot,
+          align: "left",
+        },
+      ]);
+      return;
+    }
+
+    if (!DEMO_TOKEN_MINT) {
+      setMessages((prev) => [
+        ...prev,
+        {
+          author: "AgentSafe Agent",
+          body: "Error: NEXT_PUBLIC_DEMO_TOKEN_MINT is not configured.",
+          icon: Bot,
+          align: "left",
+        },
+      ]);
+      return;
+    }
 
     const userMessage: ChatMessage = {
       author: "User",
@@ -53,7 +82,13 @@ export function AgentChat() {
       const res = await fetch("/api/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ messages: updatedHistory }),
+        body: JSON.stringify({
+          messages: updatedHistory,
+          context: {
+            owner: publicKey.toBase58(),
+            tokenMint: DEMO_TOKEN_MINT,
+          },
+        }),
       });
 
       const data = (await res.json().catch(() => ({}))) as ChatResponse;
