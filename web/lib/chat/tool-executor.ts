@@ -89,7 +89,7 @@ export async function executeToolCall(
     context.tokenMint,
     "confirmed",
     TOKEN_PROGRAM_ID,
-  ); 
+  );
   const amountUnits = parseTokenAmount(amount.amount, mint.decimals);
 
   if (amountUnits.toString() === "0") {

@@ -145,3 +145,8 @@ jobs:
 
       - name: Build
         run: npm run build
+        env:
+          AGENT_SECRET_KEY: ${{ secrets.AGENT_SECRET_KEY }}
+          OPENROUTER_API_KEY: ${{ secrets.OPENROUTER_API_KEY }}
+          NEXT_PUBLIC_DEMO_TOKEN_MINT: ${{ secrets.NEXT_PUBLIC_DEMO_TOKEN_MINT }}
+          NEXT_PUBLIC_SOLANA_RPC_URL: ${{ secrets.NEXT_PUBLIC_SOLANA_RPC_URL }}
