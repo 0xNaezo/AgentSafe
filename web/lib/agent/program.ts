@@ -1,8 +1,18 @@
-import { Connection } from "@solana/web3.js";
+import { Connection, Transaction, VersionedTransaction } from "@solana/web3.js";
 import { AnchorProvider, Program } from "@coral-xyz/anchor";
 import type { AnchorProgram } from "../../types/anchor_program";
 import idl from "../solana/anchor-program-idl.json";
-import { agentKeypair } from "./signer";
+import { getAgentKeypair } from "./signer";
+
+type AgentTransaction = Transaction | VersionedTransaction;
+
+let program: Program<AnchorProgram> | null = null;
+
+function isVersionedTransaction(
+  tx: AgentTransaction,
+): tx is VersionedTransaction {
+  return "version" in tx;
+}
 
 function createAnchorProgram(): Program<AnchorProgram> {
   const publicSolanaRpcUrl = process.env.NEXT_PUBLIC_SOLANA_RPC_URL;
@@ -12,14 +22,29 @@ function createAnchorProgram(): Program<AnchorProgram> {
   }
 
   const connection = new Connection(publicSolanaRpcUrl);
+  const agentKeypair = getAgentKeypair();
   const agentWallet = {
     publicKey: agentKeypair.publicKey,
-    signTransaction: async (tx: any) => {
-      tx.partialSign(agentKeypair);
+    signTransaction: async <T extends AgentTransaction>(tx: T): Promise<T> => {
+      if (isVersionedTransaction(tx)) {
+        tx.sign([agentKeypair]);
+      } else {
+        tx.partialSign(agentKeypair);
+      }
+
       return tx;
     },
-    signAllTransactions: async (txs: any[]) => {
-      txs.forEach((tx) => tx.partialSign(agentKeypair));
+    signAllTransactions: async <T extends AgentTransaction>(
+      txs: T[],
+    ): Promise<T[]> => {
+      txs.forEach((tx) => {
+        if (isVersionedTransaction(tx)) {
+          tx.sign([agentKeypair]);
+        } else {
+          tx.partialSign(agentKeypair);
+        }
+      });
+
       return txs;
     },
   };
@@ -38,4 +63,7 @@ function createAnchorProgram(): Program<AnchorProgram> {
   return program;
 }
 
-export const program: Program<AnchorProgram> = createAnchorProgram();
+export function getAnchorProgram(): Program<AnchorProgram> {
+  program ??= createAnchorProgram();
+  return program;
+}

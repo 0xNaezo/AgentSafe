@@ -6,8 +6,8 @@ import {
   getAssociatedTokenAddressSync,
   TOKEN_PROGRAM_ID,
 } from "@solana/spl-token";
-import { agentPubkey } from "./signer";
-import { program } from "./program";
+import { getAgentPubkey } from "./signer";
+import { getAnchorProgram } from "./program";
 
 export async function executePaymentWithAgent(
   owner: PublicKey,
@@ -17,6 +17,8 @@ export async function executePaymentWithAgent(
 ): Promise<string> {
   const [vaultPda] = deriveVaultPda(owner, tokenMint);
   const [vaultTokenAccountPda] = deriveVaultTokenAccountPda(vaultPda);
+  const agentPubkey = getAgentPubkey();
+  const program = getAnchorProgram();
 
   const recipientAta = getAssociatedTokenAddressSync(
     tokenMint,

@@ -1,7 +1,9 @@
 import { Keypair } from "@solana/web3.js";
 import bs58 from "bs58";
 
-function LoadAgentKeypair(): Keypair {
+let agentKeypair: Keypair | null = null;
+
+function loadAgentKeypair(): Keypair {
   const privateKeyBase58 = process.env.AGENT_SECRET_KEY;
 
   if (!privateKeyBase58) {
@@ -16,7 +18,11 @@ function LoadAgentKeypair(): Keypair {
   return Keypair.fromSecretKey(secretKey);
 }
 
-export const agentKeypair = LoadAgentKeypair();
-export const agentPubkey = agentKeypair.publicKey;
+export function getAgentKeypair(): Keypair {
+  agentKeypair ??= loadAgentKeypair();
+  return agentKeypair;
+}
 
-//
+export function getAgentPubkey() {
+  return getAgentKeypair().publicKey;
+}
