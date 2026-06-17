@@ -21,9 +21,7 @@ function isChatMessage(value: unknown): value is ChatMessage {
 
   const message = value as Partial<ChatMessage>;
   return (
-    (message.role === "user" ||
-      message.role === "assistant" ||
-      message.role === "tool") &&
+    (message.role === "user" || message.role === "assistant") &&
     (typeof message.content === "string" || message.content === null)
   );
 }

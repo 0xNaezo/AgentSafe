@@ -2,7 +2,7 @@ import { getMint, TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 
 import { executePaymentWithAgent } from "../agent/execute-payment";
-import { program } from "../agent/program";
+import { getAnchorProgram } from "../agent/program";
 import { parseTokenAmount } from "../solana/amounts";
 import type { ChatExecutionContext, ToolCall } from "./types";
 
@@ -109,6 +109,7 @@ export async function executeToolCall(
   }
 
   try {
+    const program = getAnchorProgram();
     const mint = await getMint(
       program.provider.connection,
       context.tokenMint,
