@@ -29,7 +29,7 @@ function parseMessages(messagesInput: unknown): ParseMessagesResult {
     .safeParse(messagesInput);
 
   if (!messagesResult.success) {
-    return { ok: false, error: "Messages array is required", status: 400 };
+    return { ok: false, error: "Invalid message format", status: 400 };
   }
 
   const messages: ChatMessage[] = [];

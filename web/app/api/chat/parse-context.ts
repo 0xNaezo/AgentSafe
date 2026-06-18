@@ -23,7 +23,7 @@ export function parseExecutionContext(
       return { ok: false, error, status: 400 };
     }
 
-    return { ok: false, error: "Context object is required", status: 400 };
+    return { ok: false, error: "Invalid context", status: 400 };
   }
 
   return {

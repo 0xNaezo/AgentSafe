@@ -109,7 +109,11 @@ export function AgentChat() {
       }
 
       if (data.messages) {
-        setHistory(data.messages);
+        setHistory(
+          data.messages.filter(
+            (message) => message.role !== "tool" && !message.tool_calls,
+          ),
+        );
       }
 
       const newMessages: ChatMessage[] = [];

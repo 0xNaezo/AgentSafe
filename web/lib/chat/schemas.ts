@@ -31,7 +31,10 @@ export const executionContextSchema = z.object({
 });
 
 export const executePaymentToolArgsSchema = z.object({
-  amount: z.string(),
+  amount: z
+    .string()
+    .trim()
+    .regex(/^\d+(\.\d+)?$/, "amount must be a positive decimal number"),
   address: publicKeySchema("address"),
 });
 
@@ -40,6 +43,9 @@ export const toolCallArgsSchema = z.record(z.unknown());
 export const toolResultSummarySchema = z.union([
   z.object({
     executed: z.literal(true),
+    tool: z.literal("execute_payment"),
+    recipient: z.string(),
+    amount: z.string(),
     signature: z.string(),
   }),
   z.object({
