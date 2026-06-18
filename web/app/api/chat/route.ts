@@ -53,6 +53,11 @@ function parseMessages(messagesInput: unknown): ParseMessagesResult {
   return { ok: true, messages };
 }
 
+/**
+ * Handles POST requests to process authenticated chat interactions.
+ *
+ * Validates the request body, authenticates the requester, ensures the execution context matches the authenticated wallet, and forwards the validated messages to the chat completion service.
+ */
 export async function POST(request: Request) {
   try {
     let rawBody: unknown;

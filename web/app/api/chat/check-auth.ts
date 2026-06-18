@@ -18,6 +18,12 @@ type ParsedSignedMessage = {
   issuedAt: number;
 };
 
+/**
+ * Parses a signed message string into structured authorization fields.
+ *
+ * @param message - The signed message string to parse
+ * @returns A `ParsedSignedMessage` with extracted owner, token mint, and timestamp, or `null` if the message format is invalid
+ */
 function parseSignedMessage(message: string): ParsedSignedMessage | null {
   const lines = message.split("\n");
 
@@ -49,6 +55,13 @@ function parseSignedMessage(message: string): ParsedSignedMessage | null {
   }
 }
 
+/**
+ * Extracts a field value from a line formatted as `field: value`.
+ *
+ * @param line - The line to parse
+ * @param field - The name of the field to extract
+ * @returns The field value if the line starts with `${field}: `, `null` otherwise
+ */
 function readSignedMessageField(line: string, field: string) {
   const prefix = `${field}: `;
 
@@ -59,6 +72,12 @@ function readSignedMessageField(line: string, field: string) {
   return line.slice(prefix.length);
 }
 
+/**
+ * Validates and authenticates a chat authorization payload.
+ *
+ * @param authInput - The authorization payload to validate
+ * @returns `{ ok: true, context: { owner, tokenMint } }` on success, or `{ ok: false, error, status }` on failure with an HTTP-like status code
+ */
 export function checkAuth(authInput: unknown): CheckAuthResult {
   const auth = authSchema.safeParse(authInput);
 

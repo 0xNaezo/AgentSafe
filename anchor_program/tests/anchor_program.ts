@@ -206,6 +206,14 @@ describe("anchor_program", () => {
   });
 });
 
+/**
+ * Creates and initializes a complete test vault with configured spending limits and initial token balance.
+ *
+ * @param dailyLimit - Maximum amount that can be spent in a single day
+ * @param onetimeLimit - Maximum amount that can be spent in a single transaction
+ * @param vaultBalance - Initial amount of tokens to mint into the vault
+ * @returns A TestVault object containing all generated keypairs, derived vault addresses, and configured limits
+ */
 async function setupVault({
   dailyLimit,
   onetimeLimit,
@@ -259,6 +267,13 @@ async function setupVault({
   };
 }
 
+/**
+ * Executes a payment transaction in the vault program.
+ *
+ * @param overrides - Account address overrides (uses ctx defaults if not provided)
+ * @param signers - Transaction signers (defaults to ctx.agent)
+ * @returns The transaction signature
+ */
 async function executePayment(
   ctx: TestVault,
   amount: number,
@@ -286,6 +301,12 @@ async function executePayment(
     .rpc();
 }
 
+/**
+ * Creates an SPL token mint.
+ *
+ * @param mintAuthority - The public key authorized to mint tokens
+ * @returns The public key of the created mint
+ */
 async function createMint(
   mintAuthority: web3.PublicKey,
 ): Promise<web3.PublicKey> {
@@ -310,6 +331,11 @@ async function createMint(
   return mint.publicKey;
 }
 
+/**
+ * Creates a new SPL token account for the specified mint and owner.
+ *
+ * @returns The public key of the created token account.
+ */
 async function createTokenAccount(
   mint: web3.PublicKey,
   owner: web3.PublicKey,
@@ -335,6 +361,9 @@ async function createTokenAccount(
   return account.publicKey;
 }
 
+/**
+ * Mints tokens to the specified token account.
+ */
 async function mintTo(
   mint: web3.PublicKey,
   tokenAccount: web3.PublicKey,
@@ -353,6 +382,9 @@ async function mintTo(
   ]);
 }
 
+/**
+ * Transfers one SOL to each of the specified accounts.
+ */
 async function fundAccounts(pubkeys: web3.PublicKey[]): Promise<void> {
   await sendInstructions(
     pubkeys.map((pubkey) =>
@@ -365,6 +397,11 @@ async function fundAccounts(pubkeys: web3.PublicKey[]): Promise<void> {
   );
 }
 
+/**
+ * Sends and confirms a transaction containing the specified instructions.
+ *
+ * @returns The transaction signature.
+ */
 async function sendInstructions(
   instructions: web3.TransactionInstruction[],
   signers: web3.Signer[] = [],
@@ -375,6 +412,11 @@ async function sendInstructions(
   );
 }
 
+/**
+ * Constructs a transaction instruction to initialize an SPL token mint.
+ *
+ * @returns A transaction instruction for the SPL token program's `initializeMint2` operation.
+ */
 function initializeMint2Instruction(
   mint: web3.PublicKey,
   mintAuthority: web3.PublicKey,
@@ -390,6 +432,14 @@ function initializeMint2Instruction(
   });
 }
 
+/**
+ * Constructs an instruction to initialize an SPL token account.
+ *
+ * @param account - The token account to initialize
+ * @param mint - The mint associated with the token account
+ * @param owner - The owner of the token account
+ * @returns A transaction instruction for the SPL Token program
+ */
 function initializeAccount3Instruction(
   account: web3.PublicKey,
   mint: web3.PublicKey,
@@ -405,6 +455,13 @@ function initializeAccount3Instruction(
   });
 }
 
+/**
+ * Derives the vault PDA and bump for the given owner and mint.
+ *
+ * @param owner - The owner's public key
+ * @param mint - The token mint's public key
+ * @returns A tuple containing the derived vault PDA public key and its bump seed
+ */
 function findVaultState(
   owner: web3.PublicKey,
   mint: web3.PublicKey,
@@ -415,6 +472,11 @@ function findVaultState(
   );
 }
 
+/**
+ * Derives the vault token account address.
+ *
+ * @returns The vault token account public key.
+ */
 function findVaultTokenAccount(vaultState: web3.PublicKey): web3.PublicKey {
   return web3.PublicKey.findProgramAddressSync(
     [TOKEN_VAULT_SEED, vaultState.toBuffer()],
@@ -442,6 +504,12 @@ async function fetchTokenAccount(tokenAccount: web3.PublicKey): Promise<{
   };
 }
 
+/**
+ * Asserts that a promise rejects with one of the expected Anchor error codes.
+ *
+ * @param promise - A promise expected to reject with an Anchor error
+ * @param expectedCodes - The acceptable error codes
+ */
 async function expectAnchorError(
   promise: Promise<unknown>,
   expectedCodes: string[],

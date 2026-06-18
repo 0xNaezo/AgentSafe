@@ -66,6 +66,13 @@ function validateRecipientOwner(recipient: PublicKey) {
   return { ok: true as const };
 }
 
+/**
+ * Validates and executes a payment tool call.
+ *
+ * @param toolCall - The tool call to validate and execute
+ * @param context - The chat execution context with owner and token mint information
+ * @returns A success result with transaction signature and payment details, or a failure result with an error reason
+ */
 export async function executeToolCall(
   toolCall: ToolCall,
   context: ChatExecutionContext,

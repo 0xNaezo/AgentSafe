@@ -18,6 +18,13 @@ type ChatPanelProps = {
   onUnlock: () => void;
 };
 
+/**
+ * Renders the full chat interface for a payment request chat.
+ *
+ * Displays a message list with a status indicator in the header. The footer
+ * conditionally renders either an unlock prompt (when locked) or a message composer
+ * (when unlocked). Shows a loading indicator while the agent is processing responses.
+ */
 export function ChatPanel({
   messages,
   input,

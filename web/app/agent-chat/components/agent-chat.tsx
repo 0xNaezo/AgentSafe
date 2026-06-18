@@ -19,6 +19,14 @@ type ChatAuth = {
   issuedAt: number;
 };
 
+/**
+ * Builds a newline-delimited authentication message for chat authorization.
+ *
+ * @param owner - The wallet owner's address
+ * @param tokenMint - The token mint address
+ * @param issuedAt - The timestamp when the authorization was issued
+ * @returns A newline-delimited authentication message with the provided values
+ */
 function buildChatAuthMessage(
   owner: string,
   tokenMint: string,
@@ -32,6 +40,12 @@ function buildChatAuthMessage(
   ].join("\n");
 }
 
+/**
+ * Extracts a meaningful error message from an unknown error object.
+ *
+ * @param error - The error object to extract a message from.
+ * @returns The error message if available, otherwise a fallback message.
+ */
 function getErrorMessage(error: unknown) {
   if (error instanceof Error && error.message) {
     return error.message;
@@ -40,6 +54,13 @@ function getErrorMessage(error: unknown) {
   return "failed to get a response";
 }
 
+/**
+ * Chat interface for authenticated AI agent interactions secured via wallet message signing.
+ *
+ * Requires users to connect and authenticate with a Solana wallet before sending messages.
+ * Manages conversation history, displays agent responses and tool calls, and automatically
+ * re-locks the chat after the authorization token expires (one hour).
+ */
 export function AgentChat() {
   const { publicKey, signMessage } = useWallet();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
