@@ -4,6 +4,7 @@ import { PublicKey } from "@solana/web3.js";
 import { executePaymentWithAgent } from "../agent/execute-payment";
 import { getAnchorProgram } from "../agent/program";
 import { parseTokenAmount } from "../solana/amounts";
+import { executePaymentToolArgsSchema } from "./schemas";
 import type { ChatExecutionContext, ToolCall } from "./types";
 
 type ToolExecutionResult =
@@ -27,33 +28,30 @@ function getErrorMessage(error: unknown) {
   return "Payment execution failed";
 }
 
-function isRecord(value: unknown): value is Record<string, unknown> {
-  return Boolean(value) && typeof value === "object" && !Array.isArray(value);
-}
-
 function parseToolArguments(rawArguments: string) {
   try {
     const parsed = JSON.parse(rawArguments) as unknown;
+    const args = executePaymentToolArgsSchema.safeParse(parsed);
 
-    if (!isRecord(parsed)) {
+    if (!args.success) {
+      const issue = args.error.issues[0];
+      const field = issue?.path[0];
+
+      if (field === "address" || field === "amount") {
+        const error =
+          issue.code === "invalid_type"
+            ? `${field} must be a string`
+            : issue.message;
+
+        return { ok: false as const, error };
+      }
+
       return { ok: false as const, error: "Tool arguments must be an object" };
     }
 
-    return { ok: true as const, args: parsed };
+    return { ok: true as const, args: args.data };
   } catch {
     return { ok: false as const, error: "Tool arguments must be valid JSON" };
-  }
-}
-
-function parseRecipient(value: unknown) {
-  if (typeof value !== "string") {
-    return { ok: false as const, error: "address must be a string" };
-  }
-
-  try {
-    return { ok: true as const, recipient: new PublicKey(value) };
-  } catch {
-    return { ok: false as const, error: "address must be a valid public key" };
   }
 }
 
@@ -66,14 +64,6 @@ function validateRecipientOwner(recipient: PublicKey) {
   }
 
   return { ok: true as const };
-}
-
-function parseAmount(value: unknown) {
-  if (typeof value !== "string") {
-    return { ok: false as const, error: "amount must be a string" };
-  }
-
-  return { ok: true as const, amount: value };
 }
 
 export async function executeToolCall(
@@ -93,19 +83,9 @@ export async function executeToolCall(
     return { executed: false, reason: parsedArguments.error };
   }
 
-  const recipient = parseRecipient(parsedArguments.args.address);
-  if (!recipient.ok) {
-    return { executed: false, reason: recipient.error };
-  }
-
-  const validRecipientOwner = validateRecipientOwner(recipient.recipient);
+  const validRecipientOwner = validateRecipientOwner(parsedArguments.args.address);
   if (!validRecipientOwner.ok) {
     return { executed: false, reason: validRecipientOwner.error };
-  }
-
-  const amount = parseAmount(parsedArguments.args.amount);
-  if (!amount.ok) {
-    return { executed: false, reason: amount.error };
   }
 
   try {
@@ -116,7 +96,7 @@ export async function executeToolCall(
       "confirmed",
       TOKEN_PROGRAM_ID,
     );
-    const amountUnits = parseTokenAmount(amount.amount, mint.decimals);
+    const amountUnits = parseTokenAmount(parsedArguments.args.amount, mint.decimals);
 
     if (amountUnits.toString() === "0") {
       return { executed: false, reason: "amount must be greater than zero" };
@@ -125,7 +105,7 @@ export async function executeToolCall(
     const signature = await executePaymentWithAgent(
       context.owner,
       context.tokenMint,
-      recipient.recipient,
+      parsedArguments.args.address,
       amountUnits,
     );
 
@@ -133,8 +113,8 @@ export async function executeToolCall(
       executed: true,
       signature,
       tool: "execute_payment",
-      recipient: recipient.recipient.toBase58(),
-      amount: amount.amount,
+      recipient: parsedArguments.args.address.toBase58(),
+      amount: parsedArguments.args.amount,
     };
   } catch (error) {
     console.error("Payment tool execution failed:", error);

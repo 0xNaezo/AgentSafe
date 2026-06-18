@@ -1,3 +1,4 @@
+import { executePaymentToolArgsSchema, toolCallArgsSchema } from "./schemas";
 import type { OpenRouterChoice, ToolCallResult } from "./types";
 
 export function extractToolCalls(choice: OpenRouterChoice): ToolCallResult[] {
@@ -20,17 +21,33 @@ export function extractToolCalls(choice: OpenRouterChoice): ToolCallResult[] {
 
     try {
       const parsedArgs = JSON.parse(toolFunction.arguments) as unknown;
-      if (
-        !parsedArgs ||
-        typeof parsedArgs !== "object" ||
-        Array.isArray(parsedArgs)
-      ) {
+
+      if (toolFunction.name === "execute_payment") {
+        const args = executePaymentToolArgsSchema.safeParse(parsedArgs);
+
+        if (!args.success) {
+          continue;
+        }
+
+        results.push({
+          name: toolFunction.name,
+          args: {
+            amount: args.data.amount,
+            address: args.data.address.toBase58(),
+          },
+        });
+        continue;
+      }
+
+      const args = toolCallArgsSchema.safeParse(parsedArgs);
+
+      if (!args.success) {
         continue;
       }
 
       results.push({
         name: toolFunction.name,
-        args: parsedArgs as Record<string, unknown>,
+        args: args.data,
       });
     } catch (error) {
       console.warn("Skipping malformed tool call arguments:", error);
