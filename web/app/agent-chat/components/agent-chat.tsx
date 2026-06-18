@@ -47,8 +47,9 @@ export function AgentChat() {
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
   const [chatAuth, setChatAuth] = useState<ChatAuth | null>(null);
-  const [authorizingChat, setAuthorizingChat] = useState(false);
-  const authRequestKeyRef = useRef<string | null>(null);
+  const [unlockingChat, setUnlockingChat] = useState(false);
+  const [unlockError, setUnlockError] = useState<string | null>(null);
+  const [now, setNow] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -60,132 +61,81 @@ export function AgentChat() {
   }, [input]);
 
   useEffect(() => {
-    const owner = publicKey?.toBase58();
-    const tokenMint = DEMO_TOKEN_MINT;
+    const id = window.setInterval(() => setNow(Date.now()), 1000);
 
-    if (!owner || !tokenMint) {
-      authRequestKeyRef.current = null;
-      setChatAuth(null);
-      setAuthorizingChat(false);
+    return () => window.clearInterval(id);
+  }, []);
+
+  const owner = publicKey?.toBase58() ?? null;
+  const tokenMint = DEMO_TOKEN_MINT;
+  const chatAuthExpiresAt = chatAuth
+    ? chatAuth.issuedAt + CHAT_AUTH_TTL_MS
+    : 0;
+  const isChatUnlocked =
+    Boolean(owner) &&
+    Boolean(tokenMint) &&
+    chatAuth?.owner === owner &&
+    chatAuth.tokenMint === tokenMint &&
+    now < chatAuthExpiresAt;
+
+  const remainingMinutes = Math.max(
+    0,
+    Math.ceil((chatAuthExpiresAt - now) / 60_000),
+  );
+  const chatStatusLabel = isChatUnlocked
+    ? `Agent unlocked: ${remainingMinutes}m left`
+    : "Agent locked";
+
+  async function authorizeChat() {
+    setUnlockError(null);
+
+    if (!owner) {
+      setUnlockError("Connect the vault owner wallet before unlocking chat.");
+      return;
+    }
+
+    if (!tokenMint) {
+      setUnlockError("NEXT_PUBLIC_DEMO_TOKEN_MINT is not configured.");
       return;
     }
 
     if (!signMessage) {
-      setChatAuth(null);
+      setUnlockError("Connected wallet does not support message signing.");
       return;
     }
 
-    const now = Date.now();
-    const authKey = `${owner}:${tokenMint}`;
-    const hasValidAuth =
-      chatAuth?.owner === owner &&
-      chatAuth.tokenMint === tokenMint &&
-      now - chatAuth.issuedAt < CHAT_AUTH_TTL_MS;
+    setUnlockingChat(true);
 
-    if (hasValidAuth || authRequestKeyRef.current === authKey) {
-      return;
-    }
-
-    authRequestKeyRef.current = authKey;
-    setAuthorizingChat(true);
-
-    void (async () => {
+    try {
       const issuedAt = Date.now();
       const signedMessage = buildChatAuthMessage(owner, tokenMint, issuedAt);
+      const signature = await signMessage(
+        new TextEncoder().encode(signedMessage),
+      );
 
-      try {
-        const signature = await signMessage(
-          new TextEncoder().encode(signedMessage),
-        );
-
-        if (authRequestKeyRef.current !== authKey) {
-          return;
-        }
-
-        setChatAuth({
-          owner,
-          tokenMint,
-          signature: bs58.encode(signature),
-          signedMessage,
-          issuedAt,
-        });
-      } catch (error) {
-        console.error("Failed to authorize chat.", error);
-
-        if (authRequestKeyRef.current !== authKey) {
-          return;
-        }
-
-        setChatAuth(null);
-        setMessages((prev) => [
-          ...prev,
-          {
-            author: "AgentSafe Agent",
-            body: `Error: failed to authorize chat: ${getErrorMessage(error)}`,
-            icon: Bot,
-            align: "left",
-          },
-        ]);
-      } finally {
-        if (authRequestKeyRef.current === authKey) {
-          setAuthorizingChat(false);
-        }
-      }
-    })();
-  }, [chatAuth, publicKey, signMessage]);
+      setChatAuth({
+        owner,
+        tokenMint,
+        signature: bs58.encode(signature),
+        signedMessage,
+        issuedAt,
+      });
+      setNow(Date.now());
+      setUnlockError(null);
+    } catch (error) {
+      console.error("Failed to authorize chat.", error);
+      setChatAuth(null);
+      setUnlockError(`Failed to authorize chat: ${getErrorMessage(error)}`);
+    } finally {
+      setUnlockingChat(false);
+    }
+  }
 
   async function sendMessage(content: string) {
     if (!content.trim() || loading) return;
 
-    if (!publicKey) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          author: "AgentSafe Agent",
-          body: "Error: connect the vault owner wallet before sending a payment request.",
-          icon: Bot,
-          align: "left",
-        },
-      ]);
-      return;
-    }
-
-    if (!DEMO_TOKEN_MINT) {
-      setMessages((prev) => [
-        ...prev,
-        {
-          author: "AgentSafe Agent",
-          body: "Error: NEXT_PUBLIC_DEMO_TOKEN_MINT is not configured.",
-          icon: Bot,
-          align: "left",
-        },
-      ]);
-      return;
-    }
-
-    const owner = publicKey.toBase58();
-    const hasValidAuth =
-      chatAuth?.owner === owner &&
-      chatAuth.tokenMint === DEMO_TOKEN_MINT &&
-      Date.now() - chatAuth.issuedAt < CHAT_AUTH_TTL_MS;
-
-    if (!hasValidAuth) {
-      if (chatAuth) {
-        authRequestKeyRef.current = null;
-        setChatAuth(null);
-      }
-
-      setMessages((prev) => [
-        ...prev,
-        {
-          author: "AgentSafe Agent",
-          body: authorizingChat
-            ? "Error: approve the wallet signature to authorize chat."
-            : "Error: chat authorization is missing or expired. Approve the wallet signature to continue.",
-          icon: Bot,
-          align: "left",
-        },
-      ]);
+    if (!isChatUnlocked || !owner || !tokenMint || !chatAuth) {
+      setUnlockError("Sign in to unlock the agent before sending a message.");
       return;
     }
 
@@ -214,7 +164,7 @@ export function AgentChat() {
           messages: updatedHistory,
           context: {
             owner,
-            tokenMint: DEMO_TOKEN_MINT,
+            tokenMint,
           },
           auth: {
             signature: chatAuth.signature,
@@ -229,6 +179,12 @@ export function AgentChat() {
       if (!res.ok) {
         const serverError =
           data.error ?? `Request failed with status ${res.status}`;
+
+        if (res.status === 401) {
+          setChatAuth(null);
+          setUnlockError("Chat authorization expired. Sign in again.");
+        }
+
         setMessages((prev) => [
           ...prev,
           {
@@ -305,9 +261,14 @@ export function AgentChat() {
         messages={messages}
         input={input}
         loading={loading}
+        locked={!isChatUnlocked}
+        unlocking={unlockingChat}
+        statusLabel={chatStatusLabel}
+        unlockError={unlockError}
         textareaRef={textareaRef}
         onInputChange={setInput}
         onSend={handleSend}
+        onUnlock={authorizeChat}
       />
       <AgentChatSidebar />
     </section>

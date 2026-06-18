@@ -8,18 +8,28 @@ type ChatPanelProps = {
   messages: ChatMessage[];
   input: string;
   loading: boolean;
+  locked: boolean;
+  unlocking: boolean;
+  statusLabel: string;
+  unlockError: string | null;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
   onInputChange: (value: string) => void;
   onSend: () => void;
+  onUnlock: () => void;
 };
 
 export function ChatPanel({
   messages,
   input,
   loading,
+  locked,
+  unlocking,
+  statusLabel,
+  unlockError,
   textareaRef,
   onInputChange,
   onSend,
+  onUnlock,
 }: ChatPanelProps) {
   return (
     <div className="relative flex min-h-0 flex-col">
@@ -40,7 +50,7 @@ export function ChatPanel({
           </div>
           <div className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-600">
             <LockKeyhole size={16} aria-hidden="true" />
-            Agent is not custodian
+            {statusLabel}
           </div>
         </div>
 
@@ -75,13 +85,34 @@ export function ChatPanel({
           )}
         </div>
 
-        <ChatComposer
-          input={input}
-          loading={loading}
-          textareaRef={textareaRef}
-          onInputChange={onInputChange}
-          onSend={onSend}
-        />
+        {locked ? (
+          <div className="border-t border-slate-200 p-5">
+            <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+              <button
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                disabled={unlocking}
+                onClick={onUnlock}
+                type="button"
+              >
+                <LockKeyhole size={17} aria-hidden="true" />
+                {unlocking ? "Waiting for signature..." : "Sign in to unlock Agent"}
+              </button>
+              {unlockError && (
+                <p className="text-center text-sm font-medium text-rose-600">
+                  {unlockError}
+                </p>
+              )}
+            </div>
+          </div>
+        ) : (
+          <ChatComposer
+            input={input}
+            loading={loading}
+            textareaRef={textareaRef}
+            onInputChange={onInputChange}
+            onSend={onSend}
+          />
+        )}
       </div>
     </div>
   );
