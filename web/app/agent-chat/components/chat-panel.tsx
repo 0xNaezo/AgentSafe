@@ -89,16 +89,22 @@ export function ChatPanel({
           <div className="border-t border-slate-200 p-5">
             <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
               <button
+                aria-busy={unlocking}
                 className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={unlocking}
                 onClick={onUnlock}
                 type="button"
               >
                 <LockKeyhole size={17} aria-hidden="true" />
-                {unlocking ? "Waiting for signature..." : "Sign in to unlock Agent"}
+                {unlocking
+                  ? "Waiting for signature..."
+                  : "Sign in to unlock Agent"}
               </button>
               {unlockError && (
-                <p className="text-center text-sm font-medium text-rose-600">
+                <p
+                  className="text-center text-sm font-medium text-rose-600"
+                  role="alert"
+                >
                   {unlockError}
                 </p>
               )}

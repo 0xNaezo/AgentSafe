@@ -4,6 +4,7 @@ import bs58 from "bs58";
 import { Bot, User, Wrench } from "lucide-react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useEffect, useRef, useState } from "react";
+import { buildChatAuthMessage } from "@/lib/chat/auth-message";
 import { DEMO_TOKEN_MINT } from "@/lib/solana/config";
 import { AgentChatSidebar } from "./agent-chat-sidebar";
 import { ChatPanel } from "./chat-panel";
@@ -18,19 +19,6 @@ type ChatAuth = {
   signedMessage: string;
   issuedAt: number;
 };
-
-function buildChatAuthMessage(
-  owner: string,
-  tokenMint: string,
-  issuedAt: number,
-) {
-  return [
-    "AgentSafe Chat Auth",
-    `Owner: ${owner}`,
-    `TokenMint: ${tokenMint}`,
-    `IssuedAt: ${issuedAt}`,
-  ].join("\n");
-}
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error && error.message) {
@@ -68,9 +56,7 @@ export function AgentChat() {
 
   const owner = publicKey?.toBase58() ?? null;
   const tokenMint = DEMO_TOKEN_MINT;
-  const chatAuthExpiresAt = chatAuth
-    ? chatAuth.issuedAt + CHAT_AUTH_TTL_MS
-    : 0;
+  const chatAuthExpiresAt = chatAuth ? chatAuth.issuedAt + CHAT_AUTH_TTL_MS : 0;
   const isChatUnlocked =
     Boolean(owner) &&
     Boolean(tokenMint) &&
