@@ -23,6 +23,7 @@ export const chatRequestMessageSchema = z.object({
 export const chatRequestBodySchema = z.object({
   messages: z.unknown(),
   context: z.unknown(),
+  auth: z.unknown(),
 });
 
 export const executionContextSchema = z.object({
@@ -53,3 +54,9 @@ export const toolResultSummarySchema = z.union([
     reason: z.string(),
   }),
 ]);
+
+export const authSchema = z.object({
+  signature: z.string().min(1).max(256),
+  signedMessage: z.string().min(1).max(512),
+  issuedAt: z.number().int().safe().nonnegative(),
+});
