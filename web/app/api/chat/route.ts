@@ -1,12 +1,11 @@
 import { NextResponse } from "next/server";
 import { completeChat } from "@/lib/chat/complete-chat";
+import {
+  chatRequestBodySchema,
+  chatRequestMessageSchema,
+} from "@/lib/chat/schemas";
 import type { ChatMessage } from "@/lib/chat/types";
 import { parseExecutionContext } from "./parse-context";
-
-type ChatRequestBody = {
-  messages?: unknown;
-  context?: unknown;
-};
 
 const MAX_MESSAGES = 40;
 const MAX_MESSAGE_CHARS = 4_000;
@@ -16,33 +15,27 @@ type ParseMessagesResult =
   | { ok: true; messages: ChatMessage[] }
   | { ok: false; error: string; status: number };
 
-function isChatMessage(value: unknown): value is ChatMessage {
-  if (!value || typeof value !== "object") return false;
-
-  const message = value as Partial<ChatMessage>;
-  return (
-    (message.role === "user" || message.role === "assistant") &&
-    (typeof message.content === "string" || message.content === null)
-  );
-}
-
-function parseMessages(body: ChatRequestBody): ParseMessagesResult {
-  if (!Array.isArray(body.messages) || body.messages.length === 0) {
+function parseMessages(messagesInput: unknown): ParseMessagesResult {
+  if (!Array.isArray(messagesInput) || messagesInput.length === 0) {
     return { ok: false, error: "Messages array is required", status: 400 };
   }
 
-  if (body.messages.length > MAX_MESSAGES) {
+  if (messagesInput.length > MAX_MESSAGES) {
     return { ok: false, error: "Messages array is too large", status: 413 };
+  }
+
+  const messagesResult = chatRequestMessageSchema
+    .array()
+    .safeParse(messagesInput);
+
+  if (!messagesResult.success) {
+    return { ok: false, error: "Messages array is required", status: 400 };
   }
 
   const messages: ChatMessage[] = [];
   let totalChars = 0;
 
-  for (const message of body.messages) {
-    if (!isChatMessage(message)) {
-      return { ok: false, error: "Messages array is required", status: 400 };
-    }
-
+  for (const message of messagesResult.data) {
     const contentLength = message.content?.length ?? 0;
     if (contentLength > MAX_MESSAGE_CHARS) {
       return { ok: false, error: "Message content is too large", status: 413 };
@@ -61,10 +54,10 @@ function parseMessages(body: ChatRequestBody): ParseMessagesResult {
 
 export async function POST(request: Request) {
   try {
-    let body: ChatRequestBody;
+    let rawBody: unknown;
 
     try {
-      body = (await request.json()) as ChatRequestBody;
+      rawBody = await request.json();
     } catch (error) {
       if (error instanceof SyntaxError) {
         return NextResponse.json({ error: "Invalid JSON" }, { status: 400 });
@@ -73,7 +66,15 @@ export async function POST(request: Request) {
       throw error;
     }
 
-    const parsedMessages = parseMessages(body);
+    const body = chatRequestBodySchema.safeParse(rawBody);
+    if (!body.success) {
+      return NextResponse.json(
+        { error: "Messages array is required" },
+        { status: 400 },
+      );
+    }
+
+    const parsedMessages = parseMessages(body.data.messages);
 
     if (!parsedMessages.ok) {
       return NextResponse.json(
@@ -88,7 +89,7 @@ export async function POST(request: Request) {
         { status: 503 },
       );
     }
-    const executionContext = parseExecutionContext(body.context);
+    const executionContext = parseExecutionContext(body.data.context);
 
     if (!executionContext.ok) {
       return NextResponse.json(

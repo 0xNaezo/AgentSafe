@@ -1,4 +1,5 @@
 import { callOpenRouter } from "./openrouter";
+import { toolResultSummarySchema } from "./schemas";
 import { extractToolCalls } from "./tool-calls";
 import { executeToolCall } from "./tool-executor";
 import type {
@@ -26,19 +27,17 @@ function summarizeToolResults(messages: ChatMessage[]) {
 
   try {
     const parsed = JSON.parse(latestResult) as unknown;
+    const result = toolResultSummarySchema.safeParse(parsed);
 
-    if (!parsed || typeof parsed !== "object" || Array.isArray(parsed)) {
+    if (!result.success) {
       return null;
     }
 
-    const result = parsed as Record<string, unknown>;
-    if (result.executed === true && typeof result.signature === "string") {
-      return `Payment executed. Transaction signature: ${result.signature}`;
+    if (result.data.executed) {
+      return `Payment executed. Transaction signature: ${result.data.signature}`;
     }
 
-    if (result.executed === false && typeof result.reason === "string") {
-      return `Payment was not executed: ${result.reason}`;
-    }
+    return `Payment was not executed: ${result.data.reason}`;
   } catch {
     return null;
   }
