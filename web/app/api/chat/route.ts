@@ -5,6 +5,7 @@ import {
   chatRequestMessageSchema,
 } from "@/lib/chat/schemas";
 import type { ChatMessage } from "@/lib/chat/types";
+import { checkAuth } from "./check-auth";
 import { parseExecutionContext } from "./parse-context";
 
 const MAX_MESSAGES = 40;
@@ -83,12 +84,15 @@ export async function POST(request: Request) {
       );
     }
 
-    if (!process.env.OPENROUTER_API_KEY) {
+    const verifiedAuth = checkAuth(body.data.auth);
+
+    if (!verifiedAuth.ok) {
       return NextResponse.json(
-        { error: "OPENROUTER_API_KEY is not configured" },
-        { status: 503 },
+        { error: verifiedAuth.error },
+        { status: verifiedAuth.status },
       );
     }
+
     const executionContext = parseExecutionContext(body.data.context);
 
     if (!executionContext.ok) {
@@ -98,9 +102,26 @@ export async function POST(request: Request) {
       );
     }
 
+    if (
+      !executionContext.context.owner.equals(verifiedAuth.context.owner) ||
+      !executionContext.context.tokenMint.equals(verifiedAuth.context.tokenMint)
+    ) {
+      return NextResponse.json(
+        { error: "Context does not match authenticated wallet" },
+        { status: 403 },
+      );
+    }
+
+    if (!process.env.OPENROUTER_API_KEY) {
+      return NextResponse.json(
+        { error: "OPENROUTER_API_KEY is not configured" },
+        { status: 503 },
+      );
+    }
+
     const result = await completeChat(
       parsedMessages.messages,
-      executionContext.context,
+      verifiedAuth.context,
     );
     return NextResponse.json(result);
   } catch (error) {

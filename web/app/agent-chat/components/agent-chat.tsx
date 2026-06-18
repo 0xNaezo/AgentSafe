@@ -1,5 +1,6 @@
 "use client";
 
+import bs58 from "bs58";
 import { Bot, User, Wrench } from "lucide-react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useEffect, useRef, useState } from "react";
@@ -7,6 +8,29 @@ import { DEMO_TOKEN_MINT } from "@/lib/solana/config";
 import { AgentChatSidebar } from "./agent-chat-sidebar";
 import { ChatPanel } from "./chat-panel";
 import type { ChatMessage, ChatResponse, HistoryMessage } from "../types";
+
+const CHAT_AUTH_TTL_MS = 60 * 60 * 1000;
+
+type ChatAuth = {
+  owner: string;
+  tokenMint: string;
+  signature: string;
+  signedMessage: string;
+  issuedAt: number;
+};
+
+function buildChatAuthMessage(
+  owner: string,
+  tokenMint: string,
+  issuedAt: number,
+) {
+  return [
+    "AgentSafe Chat Auth",
+    `Owner: ${owner}`,
+    `TokenMint: ${tokenMint}`,
+    `IssuedAt: ${issuedAt}`,
+  ].join("\n");
+}
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error && error.message) {
@@ -17,11 +41,14 @@ function getErrorMessage(error: unknown) {
 }
 
 export function AgentChat() {
-  const { publicKey } = useWallet();
+  const { publicKey, signMessage } = useWallet();
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [history, setHistory] = useState<HistoryMessage[]>([]);
   const [input, setInput] = useState("");
   const [loading, setLoading] = useState(false);
+  const [chatAuth, setChatAuth] = useState<ChatAuth | null>(null);
+  const [authorizingChat, setAuthorizingChat] = useState(false);
+  const authRequestKeyRef = useRef<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -31,6 +58,81 @@ export function AgentChat() {
       textareaRef.current.style.height = `${Math.min(scrollHeight, 104)}px`;
     }
   }, [input]);
+
+  useEffect(() => {
+    const owner = publicKey?.toBase58();
+    const tokenMint = DEMO_TOKEN_MINT;
+
+    if (!owner || !tokenMint) {
+      authRequestKeyRef.current = null;
+      setChatAuth(null);
+      setAuthorizingChat(false);
+      return;
+    }
+
+    if (!signMessage) {
+      setChatAuth(null);
+      return;
+    }
+
+    const now = Date.now();
+    const authKey = `${owner}:${tokenMint}`;
+    const hasValidAuth =
+      chatAuth?.owner === owner &&
+      chatAuth.tokenMint === tokenMint &&
+      now - chatAuth.issuedAt < CHAT_AUTH_TTL_MS;
+
+    if (hasValidAuth || authRequestKeyRef.current === authKey) {
+      return;
+    }
+
+    authRequestKeyRef.current = authKey;
+    setAuthorizingChat(true);
+
+    void (async () => {
+      const issuedAt = Date.now();
+      const signedMessage = buildChatAuthMessage(owner, tokenMint, issuedAt);
+
+      try {
+        const signature = await signMessage(
+          new TextEncoder().encode(signedMessage),
+        );
+
+        if (authRequestKeyRef.current !== authKey) {
+          return;
+        }
+
+        setChatAuth({
+          owner,
+          tokenMint,
+          signature: bs58.encode(signature),
+          signedMessage,
+          issuedAt,
+        });
+      } catch (error) {
+        console.error("Failed to authorize chat.", error);
+
+        if (authRequestKeyRef.current !== authKey) {
+          return;
+        }
+
+        setChatAuth(null);
+        setMessages((prev) => [
+          ...prev,
+          {
+            author: "AgentSafe Agent",
+            body: `Error: failed to authorize chat: ${getErrorMessage(error)}`,
+            icon: Bot,
+            align: "left",
+          },
+        ]);
+      } finally {
+        if (authRequestKeyRef.current === authKey) {
+          setAuthorizingChat(false);
+        }
+      }
+    })();
+  }, [chatAuth, publicKey, signMessage]);
 
   async function sendMessage(content: string) {
     if (!content.trim() || loading) return;
@@ -54,6 +156,32 @@ export function AgentChat() {
         {
           author: "AgentSafe Agent",
           body: "Error: NEXT_PUBLIC_DEMO_TOKEN_MINT is not configured.",
+          icon: Bot,
+          align: "left",
+        },
+      ]);
+      return;
+    }
+
+    const owner = publicKey.toBase58();
+    const hasValidAuth =
+      chatAuth?.owner === owner &&
+      chatAuth.tokenMint === DEMO_TOKEN_MINT &&
+      Date.now() - chatAuth.issuedAt < CHAT_AUTH_TTL_MS;
+
+    if (!hasValidAuth) {
+      if (chatAuth) {
+        authRequestKeyRef.current = null;
+        setChatAuth(null);
+      }
+
+      setMessages((prev) => [
+        ...prev,
+        {
+          author: "AgentSafe Agent",
+          body: authorizingChat
+            ? "Error: approve the wallet signature to authorize chat."
+            : "Error: chat authorization is missing or expired. Approve the wallet signature to continue.",
           icon: Bot,
           align: "left",
         },
@@ -85,8 +213,13 @@ export function AgentChat() {
         body: JSON.stringify({
           messages: updatedHistory,
           context: {
-            owner: publicKey.toBase58(),
+            owner,
             tokenMint: DEMO_TOKEN_MINT,
+          },
+          auth: {
+            signature: chatAuth.signature,
+            signedMessage: chatAuth.signedMessage,
+            issuedAt: chatAuth.issuedAt,
           },
         }),
       });

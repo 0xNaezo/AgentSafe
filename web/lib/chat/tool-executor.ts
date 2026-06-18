@@ -83,7 +83,9 @@ export async function executeToolCall(
     return { executed: false, reason: parsedArguments.error };
   }
 
-  const validRecipientOwner = validateRecipientOwner(parsedArguments.args.address);
+  const validRecipientOwner = validateRecipientOwner(
+    parsedArguments.args.address,
+  );
   if (!validRecipientOwner.ok) {
     return { executed: false, reason: validRecipientOwner.error };
   }
@@ -96,7 +98,10 @@ export async function executeToolCall(
       "confirmed",
       TOKEN_PROGRAM_ID,
     );
-    const amountUnits = parseTokenAmount(parsedArguments.args.amount, mint.decimals);
+    const amountUnits = parseTokenAmount(
+      parsedArguments.args.amount,
+      mint.decimals,
+    );
 
     if (amountUnits.toString() === "0") {
       return { executed: false, reason: "amount must be greater than zero" };
