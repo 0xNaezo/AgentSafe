@@ -5,7 +5,7 @@
  * IDL can be found at `anchor_program/target/idl/anchor_program.json`.
  */
 export type AnchorProgram = {
-  address: "98yejd2ParWqYVsi1AwdJBwxSsrzCyMRX1EKVVmTPqhy";
+  address: "2AQb8x4MEFmLKtF3QhoFtNvDD7sXFNqaC6rQuuE6CnGi";
   metadata: {
     name: "anchorProgram";
     version: "0.1.0";
