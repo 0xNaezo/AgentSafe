@@ -1,5 +1,5 @@
 {
-  "address": "98yejd2ParWqYVsi1AwdJBwxSsrzCyMRX1EKVVmTPqhy",
+  "address": "2AQb8x4MEFmLKtF3QhoFtNvDD7sXFNqaC6rQuuE6CnGi",
   "metadata": {
     "name": "anchor_program",
     "version": "0.1.0",
@@ -146,6 +146,11 @@
       "code": 6002,
       "name": "MathOverflow",
       "msg": "A mathematical overflow occurred during calculation."
+    },
+    {
+      "code": 6003,
+      "name": "InvalidLimitsConfiguration",
+      "msg": "Daily limit must be greater than or equal to the one-time limit."
     }
   ],
   "types": [
