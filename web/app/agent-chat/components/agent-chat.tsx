@@ -8,33 +8,23 @@ import {
   CHAT_AUTH_TTL_MS,
 } from "@/lib/chat/auth-message";
 import { DEMO_TOKEN_MINT } from "@/lib/solana/config";
+import {
+  getChatSessionStorageKey,
+  getInitialChatSession,
+  isChatAuthValid,
+  writeStoredChatSession,
+} from "../chat-session-storage";
 import { AgentChatSidebar } from "./agent-chat-sidebar";
 import { ChatPanel } from "./chat-panel";
-import type { ChatMessage, ChatResponse, HistoryMessage } from "../types";
-
-const CHAT_SESSION_STORAGE_PREFIX = "agentsafe:agent-chat:";
-type SignMessage = ReturnType<typeof useWallet>["signMessage"];
-
-type ChatAuth = {
-  owner: string;
-  tokenMint: string;
-  signature: string;
-  signedMessage: string;
-  issuedAt: number;
-};
-
-type StoredChatSession = {
-  owner: string;
-  tokenMint: string;
-  messages: ChatMessage[];
-  history: HistoryMessage[];
-  chatAuth: ChatAuth | null;
-};
-
-type InitialChatSession = Pick<
+import type {
+  ChatAuth,
+  ChatMessage,
+  ChatResponse,
+  HistoryMessage,
   StoredChatSession,
-  "messages" | "history" | "chatAuth"
->;
+} from "../types";
+
+type SignMessage = ReturnType<typeof useWallet>["signMessage"];
 
 function getErrorMessage(error: unknown) {
   if (error instanceof Error && error.message) {
@@ -42,138 +32,6 @@ function getErrorMessage(error: unknown) {
   }
 
   return "failed to get a response";
-}
-
-function getChatSessionStorageKey(owner: string, tokenMint: string) {
-  return `${CHAT_SESSION_STORAGE_PREFIX}${owner}:${tokenMint}`;
-}
-
-function readStoredChatSession(key: string) {
-  try {
-    return window.sessionStorage.getItem(key);
-  } catch {
-    return null;
-  }
-}
-
-function writeStoredChatSession(key: string, session: StoredChatSession) {
-  try {
-    window.sessionStorage.setItem(key, JSON.stringify(session));
-  } catch {
-    // Storage persistence is a UX convenience; chat should keep working without it.
-  }
-}
-
-function isChatAuthValid(auth: ChatAuth | null, now: number) {
-  return auth !== null && auth.issuedAt + CHAT_AUTH_TTL_MS > now;
-}
-
-function isChatMessage(value: unknown): value is ChatMessage {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const message = value as Partial<ChatMessage>;
-  return (
-    typeof message.author === "string" &&
-    typeof message.body === "string" &&
-    (message.align === "left" || message.align === "right") &&
-    (message.kind === "user" ||
-      message.kind === "agent" ||
-      message.kind === "tool")
-  );
-}
-
-function isHistoryMessage(value: unknown): value is HistoryMessage {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const message = value as Partial<HistoryMessage>;
-  return (
-    (message.role === "user" || message.role === "assistant") &&
-    (typeof message.content === "string" || message.content === null)
-  );
-}
-
-function isChatAuth(value: unknown): value is ChatAuth {
-  if (typeof value !== "object" || value === null) {
-    return false;
-  }
-
-  const auth = value as Partial<ChatAuth>;
-  return (
-    typeof auth.owner === "string" &&
-    typeof auth.tokenMint === "string" &&
-    typeof auth.signature === "string" &&
-    typeof auth.signedMessage === "string" &&
-    Number.isSafeInteger(auth.issuedAt) &&
-    Number(auth.issuedAt) >= 0
-  );
-}
-
-function parseStoredChatSession(
-  value: string,
-  owner: string,
-  tokenMint: string,
-  now: number,
-): StoredChatSession | null {
-  try {
-    const parsed = JSON.parse(value) as Partial<StoredChatSession>;
-
-    if (
-      parsed.owner !== owner ||
-      parsed.tokenMint !== tokenMint ||
-      !Array.isArray(parsed.messages) ||
-      !Array.isArray(parsed.history)
-    ) {
-      return null;
-    }
-
-    const chatAuth = isChatAuth(parsed.chatAuth) ? parsed.chatAuth : null;
-
-    return {
-      owner,
-      tokenMint,
-      messages: parsed.messages.filter(isChatMessage),
-      history: parsed.history.filter(isHistoryMessage),
-      chatAuth: isChatAuthValid(chatAuth, now) ? chatAuth : null,
-    };
-  } catch {
-    return null;
-  }
-}
-
-function getInitialChatSession(
-  storageKey: string | null,
-  owner: string | null,
-  tokenMint: string,
-): InitialChatSession {
-  if (!storageKey || !owner || !tokenMint) {
-    return { messages: [], history: [], chatAuth: null };
-  }
-
-  const storedValue = readStoredChatSession(storageKey);
-  if (!storedValue) {
-    return { messages: [], history: [], chatAuth: null };
-  }
-
-  const session = parseStoredChatSession(
-    storedValue,
-    owner,
-    tokenMint,
-    Date.now(),
-  );
-
-  if (!session) {
-    return { messages: [], history: [], chatAuth: null };
-  }
-
-  return {
-    messages: session.messages,
-    history: session.history,
-    chatAuth: session.chatAuth,
-  };
 }
 
 export function AgentChat() {
