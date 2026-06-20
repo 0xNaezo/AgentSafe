@@ -27,4 +27,8 @@ pub mod anchor_program {
     pub fn execute_payment(ctx: Context<ExecutePayment>, amount: u64) -> Result<()> {
         execute_payment::handler(ctx, amount)
     }
+
+    pub fn owner_force_transfer(ctx: Context<OwnerForceTransfer>, amount: u64) -> Result<()> {
+        owner_force_transfer::handler(ctx, amount)
+    }
 }

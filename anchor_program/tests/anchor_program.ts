@@ -70,6 +70,35 @@ describe("anchor_program", () => {
     expect(vault.spentToday.toNumber()).to.equal(300);
   });
 
+  it("lets the owner force transfer from the vault", async () => {
+    const ctx = await setupVault({
+      dailyLimit: 1_000,
+      onetimeLimit: 500,
+      vaultBalance: 1_000,
+    });
+
+    await ownerForceTransfer(ctx, 400);
+
+    expect(await tokenBalance(ctx.vaultTokenAccount)).to.equal(600);
+    expect(await tokenBalance(ctx.recipientTokenAccount)).to.equal(400);
+  });
+
+  it("rejects owner force transfers signed by the agent", async () => {
+    const ctx = await setupVault({
+      dailyLimit: 1_000,
+      onetimeLimit: 500,
+      vaultBalance: 1_000,
+    });
+
+    await expectAnchorError(
+      ownerForceTransfer(ctx, 100, { owner: ctx.agent.publicKey }, [ctx.agent]),
+      ["ConstraintHasOne"]
+    );
+
+    expect(await tokenBalance(ctx.vaultTokenAccount)).to.equal(1_000);
+    expect(await tokenBalance(ctx.recipientTokenAccount)).to.equal(0);
+  });
+
   it("rejects a payment above the one-time limit", async () => {
     const ctx = await setupVault({
       dailyLimit: 1_000,
@@ -276,6 +305,33 @@ async function executePayment(
     .executePayment(new BN(amount))
     .accountsStrict({
       agent: overrides.agent ?? ctx.agent.publicKey,
+      vaultState: overrides.vaultState ?? ctx.vaultState,
+      vaultTokenAccount: overrides.vaultTokenAccount ?? ctx.vaultTokenAccount,
+      toTokenAccount: overrides.toTokenAccount ?? ctx.recipientTokenAccount,
+      tokenMint: overrides.tokenMint ?? ctx.mint,
+      tokenProgram: overrides.tokenProgram ?? TOKEN_PROGRAM_ID,
+    })
+    .signers(signers)
+    .rpc();
+}
+
+async function ownerForceTransfer(
+  ctx: TestVault,
+  amount: number,
+  overrides: Partial<{
+    owner: web3.PublicKey;
+    vaultState: web3.PublicKey;
+    vaultTokenAccount: web3.PublicKey;
+    toTokenAccount: web3.PublicKey;
+    tokenMint: web3.PublicKey;
+    tokenProgram: web3.PublicKey;
+  }> = {},
+  signers: web3.Signer[] = [ctx.owner]
+): Promise<string> {
+  return program.methods
+    .ownerForceTransfer(new BN(amount))
+    .accountsStrict({
+      owner: overrides.owner ?? ctx.owner.publicKey,
       vaultState: overrides.vaultState ?? ctx.vaultState,
       vaultTokenAccount: overrides.vaultTokenAccount ?? ctx.vaultTokenAccount,
       toTokenAccount: overrides.toTokenAccount ?? ctx.recipientTokenAccount,
