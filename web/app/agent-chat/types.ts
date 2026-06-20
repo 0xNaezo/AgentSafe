@@ -10,12 +10,33 @@ export type ChatMessage = {
   kind: ChatMessageKind;
 };
 
+export type ChatAuth = {
+  owner: string;
+  tokenMint: string;
+  signature: string;
+  signedMessage: string;
+  issuedAt: number;
+};
+
 export type HistoryMessage = {
   role: "user" | "assistant" | "tool";
   content: string | null;
   tool_calls?: ToolCall[];
   tool_call_id?: string;
 };
+
+export type StoredChatSession = {
+  owner: string;
+  tokenMint: string;
+  messages: ChatMessage[];
+  history: HistoryMessage[];
+  chatAuth: ChatAuth | null;
+};
+
+export type InitialChatSession = Pick<
+  StoredChatSession,
+  "messages" | "history" | "chatAuth"
+>;
 
 export type ChatResponse = {
   reply?: string | null;
