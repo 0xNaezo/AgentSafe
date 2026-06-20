@@ -1,4 +1,5 @@
 export const CHAT_AUTH_MESSAGE_PREFIX = "AgentSafe Chat Auth";
+export const CHAT_AUTH_TTL_MS = 60 * 60 * 1000;
 
 export const CHAT_AUTH_MESSAGE_FIELDS = {
   owner: "Owner",

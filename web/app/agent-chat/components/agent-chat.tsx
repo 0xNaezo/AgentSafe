@@ -1,16 +1,19 @@
 "use client";
 
 import bs58 from "bs58";
-import { Bot, User, Wrench } from "lucide-react";
 import { useWallet } from "@solana/wallet-adapter-react";
 import { useEffect, useRef, useState } from "react";
-import { buildChatAuthMessage } from "@/lib/chat/auth-message";
+import {
+  buildChatAuthMessage,
+  CHAT_AUTH_TTL_MS,
+} from "@/lib/chat/auth-message";
 import { DEMO_TOKEN_MINT } from "@/lib/solana/config";
 import { AgentChatSidebar } from "./agent-chat-sidebar";
 import { ChatPanel } from "./chat-panel";
 import type { ChatMessage, ChatResponse, HistoryMessage } from "../types";
 
-const CHAT_AUTH_TTL_MS = 60 * 60 * 1000;
+const CHAT_SESSION_STORAGE_PREFIX = "agentsafe:agent-chat:";
+type SignMessage = ReturnType<typeof useWallet>["signMessage"];
 
 type ChatAuth = {
   owner: string;
@@ -20,6 +23,19 @@ type ChatAuth = {
   issuedAt: number;
 };
 
+type StoredChatSession = {
+  owner: string;
+  tokenMint: string;
+  messages: ChatMessage[];
+  history: HistoryMessage[];
+  chatAuth: ChatAuth | null;
+};
+
+type InitialChatSession = Pick<
+  StoredChatSession,
+  "messages" | "history" | "chatAuth"
+>;
+
 function getErrorMessage(error: unknown) {
   if (error instanceof Error && error.message) {
     return error.message;
@@ -28,8 +44,167 @@ function getErrorMessage(error: unknown) {
   return "failed to get a response";
 }
 
+function getChatSessionStorageKey(owner: string, tokenMint: string) {
+  return `${CHAT_SESSION_STORAGE_PREFIX}${owner}:${tokenMint}`;
+}
+
+function readStoredChatSession(key: string) {
+  try {
+    return window.sessionStorage.getItem(key);
+  } catch {
+    return null;
+  }
+}
+
+function writeStoredChatSession(key: string, session: StoredChatSession) {
+  try {
+    window.sessionStorage.setItem(key, JSON.stringify(session));
+  } catch {
+    // Storage persistence is a UX convenience; chat should keep working without it.
+  }
+}
+
+function isChatAuthValid(auth: ChatAuth | null, now: number) {
+  return auth !== null && auth.issuedAt + CHAT_AUTH_TTL_MS > now;
+}
+
+function isChatMessage(value: unknown): value is ChatMessage {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const message = value as Partial<ChatMessage>;
+  return (
+    typeof message.author === "string" &&
+    typeof message.body === "string" &&
+    (message.align === "left" || message.align === "right") &&
+    (message.kind === "user" ||
+      message.kind === "agent" ||
+      message.kind === "tool")
+  );
+}
+
+function isHistoryMessage(value: unknown): value is HistoryMessage {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const message = value as Partial<HistoryMessage>;
+  return (
+    (message.role === "user" || message.role === "assistant") &&
+    (typeof message.content === "string" || message.content === null)
+  );
+}
+
+function isChatAuth(value: unknown): value is ChatAuth {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const auth = value as Partial<ChatAuth>;
+  return (
+    typeof auth.owner === "string" &&
+    typeof auth.tokenMint === "string" &&
+    typeof auth.signature === "string" &&
+    typeof auth.signedMessage === "string" &&
+    Number.isSafeInteger(auth.issuedAt) &&
+    Number(auth.issuedAt) >= 0
+  );
+}
+
+function parseStoredChatSession(
+  value: string,
+  owner: string,
+  tokenMint: string,
+  now: number,
+): StoredChatSession | null {
+  try {
+    const parsed = JSON.parse(value) as Partial<StoredChatSession>;
+
+    if (
+      parsed.owner !== owner ||
+      parsed.tokenMint !== tokenMint ||
+      !Array.isArray(parsed.messages) ||
+      !Array.isArray(parsed.history)
+    ) {
+      return null;
+    }
+
+    const chatAuth = isChatAuth(parsed.chatAuth) ? parsed.chatAuth : null;
+
+    return {
+      owner,
+      tokenMint,
+      messages: parsed.messages.filter(isChatMessage),
+      history: parsed.history.filter(isHistoryMessage),
+      chatAuth: isChatAuthValid(chatAuth, now) ? chatAuth : null,
+    };
+  } catch {
+    return null;
+  }
+}
+
+function getInitialChatSession(
+  storageKey: string | null,
+  owner: string | null,
+  tokenMint: string,
+): InitialChatSession {
+  if (!storageKey || !owner || !tokenMint) {
+    return { messages: [], history: [], chatAuth: null };
+  }
+
+  const storedValue = readStoredChatSession(storageKey);
+  if (!storedValue) {
+    return { messages: [], history: [], chatAuth: null };
+  }
+
+  const session = parseStoredChatSession(
+    storedValue,
+    owner,
+    tokenMint,
+    Date.now(),
+  );
+
+  if (!session) {
+    return { messages: [], history: [], chatAuth: null };
+  }
+
+  return {
+    messages: session.messages,
+    history: session.history,
+    chatAuth: session.chatAuth,
+  };
+}
+
 export function AgentChat() {
   const { publicKey, signMessage } = useWallet();
+  const owner = publicKey?.toBase58() ?? null;
+  const tokenMint = DEMO_TOKEN_MINT;
+  const storageKey =
+    owner && tokenMint ? getChatSessionStorageKey(owner, tokenMint) : null;
+
+  return (
+    <AgentChatSession
+      key={storageKey ?? "agent-chat-locked"}
+      owner={owner}
+      signMessage={signMessage}
+      storageKey={storageKey}
+      tokenMint={tokenMint}
+    />
+  );
+}
+
+function AgentChatSession({
+  owner,
+  signMessage,
+  storageKey,
+  tokenMint,
+}: {
+  owner: string | null;
+  signMessage: SignMessage;
+  storageKey: string | null;
+  tokenMint: string;
+}) {
   const [messages, setMessages] = useState<ChatMessage[]>([]);
   const [history, setHistory] = useState<HistoryMessage[]>([]);
   const [input, setInput] = useState("");
@@ -37,6 +212,7 @@ export function AgentChat() {
   const [chatAuth, setChatAuth] = useState<ChatAuth | null>(null);
   const [unlockingChat, setUnlockingChat] = useState(false);
   const [unlockError, setUnlockError] = useState<string | null>(null);
+  const [isSessionRestored, setIsSessionRestored] = useState(false);
   const [now, setNow] = useState(0);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
@@ -54,8 +230,80 @@ export function AgentChat() {
     return () => window.clearInterval(id);
   }, []);
 
-  const owner = publicKey?.toBase58() ?? null;
-  const tokenMint = DEMO_TOKEN_MINT;
+  useEffect(() => {
+    let cancelled = false;
+
+    window.queueMicrotask(() => {
+      if (cancelled) {
+        return;
+      }
+
+      const session = getInitialChatSession(storageKey, owner, tokenMint);
+      setMessages(session.messages);
+      setHistory(session.history);
+      setChatAuth(session.chatAuth);
+      setUnlockError(null);
+      setIsSessionRestored(true);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [owner, storageKey, tokenMint]);
+
+  useEffect(() => {
+    if (!isSessionRestored || !storageKey || !owner || !tokenMint) {
+      return;
+    }
+
+    const chatAuthToStore = isChatAuthValid(chatAuth, Date.now())
+      ? chatAuth
+      : null;
+    const session: StoredChatSession = {
+      owner,
+      tokenMint,
+      messages,
+      history,
+      chatAuth: chatAuthToStore,
+    };
+
+    writeStoredChatSession(storageKey, session);
+  }, [
+    chatAuth,
+    history,
+    isSessionRestored,
+    messages,
+    owner,
+    storageKey,
+    tokenMint,
+  ]);
+
+  useEffect(() => {
+    if (!storageKey || !owner || !tokenMint || !chatAuth) {
+      return;
+    }
+
+    const msUntilExpiry = chatAuth.issuedAt + CHAT_AUTH_TTL_MS - Date.now();
+    const expireStoredAuth = () => {
+      writeStoredChatSession(storageKey, {
+        owner,
+        tokenMint,
+        messages,
+        history,
+        chatAuth: null,
+      });
+    };
+
+    if (msUntilExpiry <= 0) {
+      expireStoredAuth();
+      return;
+    }
+
+    const timeoutId = window.setTimeout(expireStoredAuth, msUntilExpiry);
+
+    return () => window.clearTimeout(timeoutId);
+  }, [chatAuth, history, messages, owner, storageKey, tokenMint]);
+
   const chatAuthExpiresAt = chatAuth ? chatAuth.issuedAt + CHAT_AUTH_TTL_MS : 0;
   const isChatUnlocked =
     Boolean(owner) &&
@@ -128,8 +376,8 @@ export function AgentChat() {
     const userMessage: ChatMessage = {
       author: "User",
       body: content,
-      icon: User,
       align: "right",
+      kind: "user",
     };
 
     setMessages((prev) => [...prev, userMessage]);
@@ -176,8 +424,8 @@ export function AgentChat() {
           {
             author: "AgentSafe Agent",
             body: `Error: ${serverError}`,
-            icon: Bot,
             align: "left",
+            kind: "agent",
           },
         ]);
         return;
@@ -198,8 +446,8 @@ export function AgentChat() {
           newMessages.push({
             author: `Tool: ${tc.name}`,
             body: "```json\n" + JSON.stringify(tc.args, null, 2) + "\n```",
-            icon: Wrench,
             align: "left",
+            kind: "tool",
           });
         }
       }
@@ -208,8 +456,8 @@ export function AgentChat() {
         newMessages.push({
           author: "AgentSafe Agent",
           body: data.reply,
-          icon: Bot,
           align: "left",
+          kind: "agent",
         });
       }
 
@@ -217,8 +465,8 @@ export function AgentChat() {
         newMessages.push({
           author: "AgentSafe Agent",
           body: "No response",
-          icon: Bot,
           align: "left",
+          kind: "agent",
         });
       }
 
@@ -227,8 +475,8 @@ export function AgentChat() {
       const errorMessage: ChatMessage = {
         author: "AgentSafe Agent",
         body: `Error: ${getErrorMessage(error)}`,
-        icon: Bot,
         align: "left",
+        kind: "agent",
       };
 
       setMessages((prev) => [...prev, errorMessage]);
