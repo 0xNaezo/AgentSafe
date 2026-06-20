@@ -9,6 +9,7 @@ type ChatPanelProps = {
   input: string;
   loading: boolean;
   locked: boolean;
+  restoring: boolean;
   unlocking: boolean;
   statusLabel: string;
   unlockError: string | null;
@@ -23,6 +24,7 @@ export function ChatPanel({
   input,
   loading,
   locked,
+  restoring,
   unlocking,
   statusLabel,
   unlockError,
@@ -85,7 +87,7 @@ export function ChatPanel({
           )}
         </div>
 
-        {locked ? (
+        {restoring ? null : locked ? (
           <div className="border-t border-slate-200 p-5">
             <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
               <button
