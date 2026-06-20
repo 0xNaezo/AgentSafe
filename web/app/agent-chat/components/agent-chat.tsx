@@ -71,7 +71,7 @@ function AgentChatSession({
   const [unlockingChat, setUnlockingChat] = useState(false);
   const [unlockError, setUnlockError] = useState<string | null>(null);
   const [isSessionRestored, setIsSessionRestored] = useState(false);
-  const [now, setNow] = useState(0);
+  const [now, setNow] = useState(() => Date.now());
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -164,6 +164,7 @@ function AgentChatSession({
 
   const chatAuthExpiresAt = chatAuth ? chatAuth.issuedAt + CHAT_AUTH_TTL_MS : 0;
   const isChatUnlocked =
+    isSessionRestored &&
     Boolean(owner) &&
     Boolean(tokenMint) &&
     chatAuth?.owner === owner &&
@@ -174,9 +175,11 @@ function AgentChatSession({
     0,
     Math.ceil((chatAuthExpiresAt - now) / 60_000),
   );
-  const chatStatusLabel = isChatUnlocked
-    ? `Agent unlocked: ${remainingMinutes}m left`
-    : "Agent locked";
+  const chatStatusLabel = !isSessionRestored
+    ? "Restoring session..."
+    : isChatUnlocked
+      ? `Agent unlocked: ${remainingMinutes}m left`
+      : "Agent locked";
 
   async function authorizeChat() {
     setUnlockError(null);
@@ -353,7 +356,8 @@ function AgentChatSession({
         messages={messages}
         input={input}
         loading={loading}
-        locked={!isChatUnlocked}
+        locked={isSessionRestored && !isChatUnlocked}
+        restoring={!isSessionRestored}
         unlocking={unlockingChat}
         statusLabel={chatStatusLabel}
         unlockError={unlockError}
