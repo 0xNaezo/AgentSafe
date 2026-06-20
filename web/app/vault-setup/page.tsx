@@ -8,6 +8,7 @@ import { getMint } from "@solana/spl-token";
 import { PublicKey } from "@solana/web3.js";
 import {
   Bot,
+  Check,
   CircleDollarSign,
   Copy,
   Info,
@@ -460,6 +461,14 @@ function LimitField({
 }
 
 function ReadonlyAddress({ id, value }: { id: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copyAddress = async () => {
+    await navigator.clipboard.writeText(value);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  };
+
   return (
     <div className="grid grid-cols-[1fr_auto] overflow-hidden rounded-lg border border-slate-200 bg-white">
       <input
@@ -469,13 +478,30 @@ function ReadonlyAddress({ id, value }: { id: string; value: string }) {
         readOnly
       />
       <button
-        className="inline-flex h-11 w-11 items-center justify-center border-l border-slate-200 bg-white text-slate-600 transition hover:bg-slate-50"
+        className={`relative overflow-hidden h-11 min-w-24 border-l text-xs font-bold transition ${
+          copied
+            ? "border-emerald-200 bg-emerald-100 text-emerald-800 ring-2 ring-inset ring-emerald-200"
+            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+        }`}
         type="button"
-        aria-label="Copy address"
-        title="Copy address"
-        onClick={() => navigator.clipboard.writeText(value)}
+        aria-label={copied ? "Address copied" : "Copy address"}
+        title={copied ? "Copied" : "Copy address"}
+        onClick={() => void copyAddress()}
       >
-        <Copy size={16} aria-hidden="true" />
+        <div
+          className={`flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+            copied ? "-translate-y-1/2" : "translate-y-0"
+          }`}
+        >
+          <span className="flex h-11 items-center justify-center gap-1 px-3">
+            <Copy size={16} aria-hidden="true" />
+            Copy
+          </span>
+          <span className="flex h-11 items-center justify-center gap-1 px-3">
+            <Check size={16} aria-hidden="true" />
+            Copied
+          </span>
+        </div>
       </button>
     </div>
   );

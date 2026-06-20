@@ -2,7 +2,7 @@ import { PublicKey } from "@solana/web3.js";
 
 import idl from "./anchor-program-idl.json";
 
-export const DEFAULT_RPC_URL = "http://localhost:8899";
+export const DEFAULT_RPC_URL = "https://devnet.helius-rpc.com";
 export const PROGRAM_ID = new PublicKey(
   process.env.NEXT_PUBLIC_AGENTSAFE_PROGRAM_ID ?? idl.address,
 );
