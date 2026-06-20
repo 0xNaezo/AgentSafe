@@ -6,12 +6,12 @@ import {
   CHAT_AUTH_MESSAGE_FIELDS,
   CHAT_AUTH_MESSAGE_LINE_COUNT,
   CHAT_AUTH_MESSAGE_PREFIX,
+  CHAT_AUTH_TTL_MS,
   readChatAuthMessageField,
 } from "@/lib/chat/auth-message";
 import { authSchema } from "@/lib/chat/schemas";
 import type { ChatExecutionContext } from "@/lib/chat/types";
 
-const CHAT_AUTH_TTL_MS = 60 * 60 * 1000;
 const CLOCK_SKEW_MS = 5 * 1000;
 
 type CheckAuthResult =

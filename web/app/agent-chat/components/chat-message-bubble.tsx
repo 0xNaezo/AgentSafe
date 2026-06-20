@@ -1,13 +1,15 @@
+import { Bot, User, Wrench } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
-import type { ChatMessage } from "../types";
+import type { LucideIcon } from "lucide-react";
+import type { ChatMessage, ChatMessageKind } from "../types";
 
 type ChatMessageBubbleProps = {
   message: ChatMessage;
 };
 
 export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
-  const Icon = message.icon;
+  const Icon = messageIconByKind[message.kind];
   const isUser = message.align === "right";
 
   return (
@@ -49,3 +51,9 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
     </div>
   );
 }
+
+const messageIconByKind: Record<ChatMessageKind, LucideIcon> = {
+  agent: Bot,
+  tool: Wrench,
+  user: User,
+};

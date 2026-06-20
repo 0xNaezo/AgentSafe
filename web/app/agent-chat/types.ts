@@ -1,11 +1,13 @@
 import type { LucideIcon } from "lucide-react";
 import type { ToolCall } from "@/lib/chat/types";
 
+export type ChatMessageKind = "user" | "agent" | "tool";
+
 export type ChatMessage = {
   author: string;
   body: string;
-  icon: LucideIcon;
   align: "right" | "left";
+  kind: ChatMessageKind;
 };
 
 export type HistoryMessage = {
