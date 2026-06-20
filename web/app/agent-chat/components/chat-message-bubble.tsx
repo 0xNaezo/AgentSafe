@@ -8,6 +8,16 @@ type ChatMessageBubbleProps = {
   message: ChatMessage;
 };
 
+/**
+ * Renders a chat message bubble with markdown support and an avatar icon.
+ *
+ * Displays the message author name and markdown-formatted body in a styled bubble.
+ * Positions an avatar icon (selected by message kind) on the left for non-user
+ * messages or on the right for user messages. Applies distinct styling for user
+ * versus non-user messages.
+ *
+ * @param message - The chat message to display
+ */
 export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
   const Icon = messageIconByKind[message.kind];
   const isUser = message.align === "right";

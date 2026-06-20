@@ -26,6 +26,12 @@ import type {
 
 type SignMessage = ReturnType<typeof useWallet>["signMessage"];
 
+/**
+ * Extracts an error message or returns a default fallback string.
+ *
+ * @param error - The error object to extract a message from
+ * @returns The error message if the input is an Error with a message, otherwise "failed to get a response"
+ */
 function getErrorMessage(error: unknown) {
   if (error instanceof Error && error.message) {
     return error.message;
@@ -34,6 +40,13 @@ function getErrorMessage(error: unknown) {
   return "failed to get a response";
 }
 
+/**
+ * Sets up an agent chat session component with wallet-based authentication.
+ *
+ * Derives the wallet owner from the connected wallet and computes a storage key based on the owner
+ * and a configured token mint. The session component is keyed by this storage key to ensure
+ * it remounts whenever the wallet connection state changes, allowing clean session transitions.
+ */
 export function AgentChat() {
   const { publicKey, signMessage } = useWallet();
   const owner = publicKey?.toBase58() ?? null;
@@ -52,6 +65,19 @@ export function AgentChat() {
   );
 }
 
+/**
+ * Manages a persisted chat session with wallet authentication.
+ *
+ * Restores and persists chat history, messages, and authorization credentials to storage.
+ * Automatically expires stored credentials at the configured TTL.
+ * Handles unlocking the chat by signing a message with the connected wallet.
+ * Sends user messages to the chat API and displays agent responses and tool call results.
+ *
+ * @param owner - The connected wallet owner's public key in base58 format, or `null` if not connected.
+ * @param signMessage - Function provided by the connected wallet to sign binary messages.
+ * @param storageKey - Storage identifier for persisting session state across reloads, or `null` if session should not be persisted.
+ * @param tokenMint - The token mint address associated with chat authorization.
+ */
 function AgentChatSession({
   owner,
   signMessage,

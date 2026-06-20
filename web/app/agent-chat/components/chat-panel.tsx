@@ -19,6 +19,14 @@ type ChatPanelProps = {
   onUnlock: () => void;
 };
 
+/**
+ * Renders a chat panel with message history and composer or sign-in area.
+ *
+ * Displays messages in a scrollable area with a status indicator, and provides either
+ * a message input composer or sign-in button depending on the locked state.
+ *
+ * @param restoring - Indicates the session is being restored
+ */
 export function ChatPanel({
   messages,
   input,

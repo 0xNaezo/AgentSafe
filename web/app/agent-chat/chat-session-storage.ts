@@ -9,10 +9,23 @@ import type {
 
 const CHAT_SESSION_STORAGE_PREFIX = "agentsafe:agent-chat:";
 
+/**
+ * Generates a session storage key for the given owner and token mint.
+ *
+ * @param owner - The owner identifier
+ * @param tokenMint - The token mint identifier
+ * @returns The session storage key string
+ */
 export function getChatSessionStorageKey(owner: string, tokenMint: string) {
   return `${CHAT_SESSION_STORAGE_PREFIX}${owner}:${tokenMint}`;
 }
 
+/**
+ * Attempts to persist a chat session to browser storage.
+ *
+ * @param key - The storage key where the session will be stored
+ * @param session - The chat session to persist
+ */
 export function writeStoredChatSession(
   key: string,
   session: StoredChatSession,
@@ -24,10 +37,28 @@ export function writeStoredChatSession(
   }
 }
 
+/**
+ * Validates that chat authentication has not expired.
+ *
+ * @param auth - The authentication object to check, or `null`
+ * @param now - The current timestamp in milliseconds
+ * @returns `true` if `auth` is non-null and has not expired, `false` otherwise
+ */
 export function isChatAuthValid(auth: ChatAuth | null, now: number) {
   return auth !== null && auth.issuedAt + CHAT_AUTH_TTL_MS > now;
 }
 
+/**
+ * Loads a persisted chat session from storage or returns an empty initial session.
+ *
+ * If required parameters are missing, the stored session does not exist, or stored
+ * data fails validation, returns an empty session.
+ *
+ * @param storageKey - The storage key for the session
+ * @param owner - The session owner identifier
+ * @param tokenMint - The token mint identifier
+ * @returns An `InitialChatSession` containing loaded or empty messages, history, and auth
+ */
 export function getInitialChatSession(
   storageKey: string | null,
   owner: string | null,
@@ -60,6 +91,12 @@ export function getInitialChatSession(
   };
 }
 
+/**
+ * Retrieves a value from session storage.
+ *
+ * @param key - The storage key to retrieve
+ * @returns The stored string value, or null if an error occurs
+ */
 function readStoredChatSession(key: string) {
   try {
     return window.sessionStorage.getItem(key);
@@ -68,6 +105,17 @@ function readStoredChatSession(key: string) {
   }
 }
 
+/**
+ * Parses and validates a stored chat session string.
+ *
+ * Validates that the parsed session matches the provided `owner` and `tokenMint`, contains valid `messages` and `history` arrays, and has a chat auth that passes TTL validation. Invalid or missing fields are filtered or replaced with `null`.
+ *
+ * @param value - JSON string representation of a stored chat session
+ * @param owner - The expected session owner, used to validate the session data
+ * @param tokenMint - The expected token mint, used to validate the session data
+ * @param now - The current timestamp, used to validate the chat auth expiration
+ * @returns The validated session object with filtered messages and history, or `null` if parsing or validation fails
+ */
 function parseStoredChatSession(
   value: string,
   owner: string,
@@ -100,6 +148,11 @@ function parseStoredChatSession(
   }
 }
 
+/**
+ * Determines if a value conforms to the ChatMessage structure.
+ *
+ * @returns `true` if the value is a ChatMessage, `false` otherwise.
+ */
 function isChatMessage(value: unknown): value is ChatMessage {
   if (typeof value !== "object" || value === null) {
     return false;
@@ -116,6 +169,11 @@ function isChatMessage(value: unknown): value is ChatMessage {
   );
 }
 
+/**
+ * Determines if a value is a valid history message.
+ *
+ * @returns `true` if the value is a valid history message, `false` otherwise.
+ */
 function isHistoryMessage(value: unknown): value is HistoryMessage {
   if (typeof value !== "object" || value === null) {
     return false;
@@ -128,6 +186,11 @@ function isHistoryMessage(value: unknown): value is HistoryMessage {
   );
 }
 
+/**
+ * Determines if a value is a ChatAuth object.
+ *
+ * @returns `true` if the value is a ChatAuth object, `false` otherwise.
+ */
 function isChatAuth(value: unknown): value is ChatAuth {
   if (typeof value !== "object" || value === null) {
     return false;
