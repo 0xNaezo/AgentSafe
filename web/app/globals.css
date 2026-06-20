@@ -62,3 +62,17 @@ a {
 .wallet-button-shell {
   position: relative;
 }
+
+@keyframes copy-pop {
+  0% {
+    transform: scale(1);
+  }
+
+  35% {
+    transform: scale(1.08);
+  }
+
+  100% {
+    transform: scale(1);
+  }
+}

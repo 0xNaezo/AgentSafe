@@ -13,6 +13,7 @@ import {
   Activity,
   ArrowRight,
   Bot,
+  Check,
   CheckCircle2,
   CircleDollarSign,
   Clock3,
@@ -489,20 +490,45 @@ function ConnectionCard({
 }
 
 function AddressBadge({ label, value }: { label: string; value: string }) {
+  const [copied, setCopied] = useState(false);
+
+  const copyAddress = async () => {
+    await navigator.clipboard.writeText(value);
+    setCopied(true);
+    window.setTimeout(() => setCopied(false), 1400);
+  };
+
   return (
-    <div className="flex w-fit max-w-full items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm sm:ml-auto">
-      <span className="font-medium text-slate-500">{label}</span>
+    <div className="flex w-full max-w-full min-w-0 items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm sm:ml-auto sm:w-auto">
+      <span className="shrink-0 font-medium text-slate-500">{label}</span>
       <span className="min-w-0 truncate font-mono font-semibold text-slate-950">
-        {value}
+        {shortAddress(value, 5)}
       </span>
       <button
-        className="inline-flex h-7 w-7 shrink-0 items-center justify-center rounded-md border border-slate-200 bg-white text-slate-600 transition hover:border-slate-300 hover:bg-slate-50"
+        className={`relative overflow-hidden h-8 min-w-20 shrink-0 rounded-md border text-xs font-bold transition ${
+          copied
+            ? "border-emerald-200 bg-emerald-100 text-emerald-800 ring-2 ring-emerald-200"
+            : "border-slate-200 bg-white text-slate-600 hover:border-slate-300 hover:bg-slate-50"
+        }`}
         type="button"
-        aria-label="Copy address"
-        title="Copy address"
-        onClick={() => navigator.clipboard.writeText(value)}
+        aria-label={copied ? "Address copied" : "Copy address"}
+        title={copied ? "Copied" : "Copy address"}
+        onClick={() => void copyAddress()}
       >
-        <Copy size={15} aria-hidden="true" />
+        <div
+          className={`flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
+            copied ? "-translate-y-1/2" : "translate-y-0"
+          }`}
+        >
+          <span className="flex h-8 items-center justify-center gap-1 px-2">
+            <Copy size={15} aria-hidden="true" />
+            Copy
+          </span>
+          <span className="flex h-8 items-center justify-center gap-1 px-2">
+            <Check size={15} aria-hidden="true" />
+            Copied
+          </span>
+        </div>
       </button>
     </div>
   );
@@ -565,4 +591,12 @@ function parsePublicKeyOrNull(value: string) {
 function shortKey(value: PublicKey) {
   const key = value.toBase58();
   return `${key.slice(0, 4)}...${key.slice(-4)}`;
+}
+
+function shortAddress(value: string, visibleChars: number) {
+  if (value.length <= visibleChars * 2 || value.includes(" ")) {
+    return value;
+  }
+
+  return `${value.slice(0, visibleChars)}...${value.slice(-visibleChars)}`;
 }
