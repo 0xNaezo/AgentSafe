@@ -123,6 +123,53 @@
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "owner_force_transfer",
+      "discriminator": [88, 74, 91, 215, 186, 178, 107, 0],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": ["vault_state"]
+        },
+        {
+          "name": "vault_state",
+          "writable": true
+        },
+        {
+          "name": "vault_token_account",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              {
+                "kind": "const",
+                "value": [116, 111, 107, 101, 110, 95, 118, 97, 117, 108, 116]
+              },
+              {
+                "kind": "account",
+                "path": "vault_state"
+              }
+            ]
+          }
+        },
+        {
+          "name": "to_token_account",
+          "writable": true
+        },
+        {
+          "name": "token_mint"
+        },
+        {
+          "name": "token_program"
+        }
+      ],
+      "args": [
+        {
+          "name": "amount",
+          "type": "u64"
+        }
+      ]
     }
   ],
   "accounts": [
