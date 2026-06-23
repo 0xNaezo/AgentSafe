@@ -44,12 +44,21 @@ function parseAmount(value: string | null) {
     throw new BadRequestError("amount must be a positive USDC value");
   }
 
-  const units = Number(value) * 10 ** 6;
-  if (!Number.isSafeInteger(units) || units <= 0) {
+  const [integer, fraction = ""] = value.split(".");
+  const paddedFraction = fraction.padEnd(6, "0").slice(0, 6);
+  const units = new BN(integer + paddedFraction);
+
+  if (units.isNeg()) {
     throw new BadRequestError("amount must be a positive USDC value");
   }
 
   return units;
+}
+
+function toUiAmount(amountStr: string, decimals: number): BN {
+  const [integer, fraction = ""] = amountStr.split(".");
+  const paddedFraction = fraction.padEnd(decimals, "0").slice(0, decimals);
+  return new BN(integer + paddedFraction);
 }
 
 async function parseBody(req: Request): Promise<ActionPostRequest> {
@@ -68,7 +77,7 @@ async function parseBody(req: Request): Promise<ActionPostRequest> {
 
     throw new BadRequestError("Invalid JSON");
   }
-};
+}
 
 export const GET = async (req: Request) => {
   const requestUrl = new URL(req.url);
@@ -114,7 +123,7 @@ export const POST = async (req: Request) => {
     const program = getAnchorProgram();
 
     const tx = await program.methods
-      .ownerForceTransfer(new BN(amount))
+      .ownerForceTransfer(amount)
       .accountsStrict({
         owner,
         vaultState: vaultPda,
@@ -133,9 +142,7 @@ export const POST = async (req: Request) => {
       ])
       .transaction();
 
-    const connection = new Connection(
-      process.env.NEXT_PUBLIC_SOLANA_RPC_URL!,
-    );
+    const connection = new Connection(process.env.NEXT_PUBLIC_SOLANA_RPC_URL!);
 
     tx.feePayer = owner;
     tx.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
