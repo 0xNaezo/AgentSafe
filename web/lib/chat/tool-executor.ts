@@ -4,6 +4,7 @@ import { PublicKey } from "@solana/web3.js";
 import { executePaymentWithAgent } from "../agent/execute-payment";
 import { getAnchorProgram } from "../agent/program";
 import { parseTokenAmount } from "../solana/amounts";
+import { deriveVaultPda } from "../solana/pda";
 import { executePaymentToolArgsSchema } from "./schemas";
 import type { ChatExecutionContext, ToolCall } from "./types";
 
@@ -12,6 +13,14 @@ type ToolExecutionResult =
       executed: true;
       signature: string;
       tool: "execute_payment";
+      recipient: string;
+      amount: string;
+    }
+  | {
+      executed: false;
+      requiresOwnerApproval: true;
+      approvalType: "owner_force_transfer";
+      reason: "onetime_limit_exceeded";
       recipient: string;
       amount: string;
     }
@@ -66,6 +75,17 @@ function validateRecipientOwner(recipient: PublicKey) {
   return { ok: true as const };
 }
 
+function isDecimalStringGreater(left: string, right: string) {
+  const normalizedLeft = left.replace(/^0+/, "") || "0";
+  const normalizedRight = right.replace(/^0+/, "") || "0";
+
+  if (normalizedLeft.length !== normalizedRight.length) {
+    return normalizedLeft.length > normalizedRight.length;
+  }
+
+  return normalizedLeft > normalizedRight;
+}
+
 export async function executeToolCall(
   toolCall: ToolCall,
   context: ChatExecutionContext,
@@ -105,6 +125,29 @@ export async function executeToolCall(
 
     if (amountUnits.toString() === "0") {
       return { executed: false, reason: "amount must be greater than zero" };
+    }
+
+    const [vaultPda] = deriveVaultPda(context.owner, context.tokenMint);
+    const vault = await program.account.vault.fetchNullable(vaultPda);
+
+    if (!vault) {
+      return { executed: false, reason: "vault account was not found" };
+    }
+
+    if (
+      isDecimalStringGreater(
+        amountUnits.toString(),
+        vault.onetimeLimit.toString(),
+      )
+    ) {
+      return {
+        executed: false,
+        requiresOwnerApproval: true,
+        approvalType: "owner_force_transfer",
+        reason: "onetime_limit_exceeded",
+        recipient: parsedArguments.args.address.toBase58(),
+        amount: parsedArguments.args.amount,
+      };
     }
 
     const signature = await executePaymentWithAgent(

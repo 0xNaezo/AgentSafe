@@ -1,13 +1,21 @@
 import type { LucideIcon } from "lucide-react";
 import type { ToolCall } from "@/lib/chat/types";
 
-export type ChatMessageKind = "user" | "agent" | "tool";
+export type ChatBlink = {
+  type: "owner_force_transfer";
+  reason: "onetime_limit_exceeded";
+  recipient: string;
+  amount: string;
+};
+
+export type ChatMessageKind = "user" | "agent" | "tool" | "blink";
 
 export type ChatMessage = {
   author: string;
   body: string;
   align: "right" | "left";
   kind: ChatMessageKind;
+  blink?: ChatBlink;
 };
 
 export type ChatAuth = {
@@ -46,6 +54,7 @@ export type ChatResponse = {
     name: string;
     args: Record<string, unknown>;
   }>;
+  approvalRequests?: ChatBlink[];
 };
 
 export type IntentField = {

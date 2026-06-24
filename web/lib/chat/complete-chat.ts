@@ -6,6 +6,7 @@ import type {
   ChatCompletionResult,
   ChatExecutionContext,
   ChatMessage,
+  OwnerApprovalRequest,
   ToolCallResult,
 } from "./types";
 
@@ -37,6 +38,10 @@ function summarizeToolResults(messages: ChatMessage[]) {
       return `Payment executed. Transaction signature: ${result.data.signature}`;
     }
 
+    if ("requiresOwnerApproval" in result.data) {
+      return "Payment requires owner approval because it exceeds the one-time limit.";
+    }
+
     return `Payment was not executed: ${result.data.reason}`;
   } catch {
     return null;
@@ -50,6 +55,7 @@ export async function completeChat(
   executionContext: ChatExecutionContext,
 ): Promise<ChatCompletionResult> {
   const allToolCalls: ToolCallResult[] = [];
+  const approvalRequests: OwnerApprovalRequest[] = [];
   let iteration = 0;
 
   while (iteration < MAX_TOOL_CALL_ITERATIONS) {
@@ -65,6 +71,7 @@ export async function completeChat(
         return {
           reply: fallbackReply,
           toolCalls: allToolCalls,
+          approvalRequests,
           messages,
         };
       }
@@ -76,6 +83,7 @@ export async function completeChat(
       return {
         reply: "No response from model",
         toolCalls: allToolCalls,
+        approvalRequests,
         messages,
       };
     }
@@ -89,6 +97,7 @@ export async function completeChat(
       return {
         reply: choice.message.content ?? "",
         toolCalls: allToolCalls,
+        approvalRequests,
         messages,
       };
     }
@@ -104,6 +113,18 @@ export async function completeChat(
 
       for (const tc of toolCalls) {
         const toolResult = await executeToolCall(tc, executionContext);
+
+        if (
+          "requiresOwnerApproval" in toolResult &&
+          toolResult.requiresOwnerApproval
+        ) {
+          approvalRequests.push({
+            type: toolResult.approvalType,
+            reason: toolResult.reason,
+            recipient: toolResult.recipient,
+            amount: toolResult.amount,
+          });
+        }
 
         messages.push({
           role: "tool",
@@ -124,6 +145,7 @@ export async function completeChat(
     return {
       reply: choice.message.content ?? "",
       toolCalls: allToolCalls,
+      approvalRequests,
       messages,
     };
   }
@@ -131,6 +153,7 @@ export async function completeChat(
   return {
     reply: "Reached maximum number of tool call iterations.",
     toolCalls: allToolCalls,
+    approvalRequests,
     messages,
   };
 }

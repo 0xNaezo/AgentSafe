@@ -313,6 +313,18 @@ function AgentChatSession({
         }
       }
 
+      if (data.approvalRequests?.length) {
+        for (const approvalRequest of data.approvalRequests) {
+          newMessages.push({
+            author: "Owner approval required",
+            body: "Approve the transfer with the vault owner wallet.",
+            align: "left",
+            kind: "blink",
+            blink: approvalRequest,
+          });
+        }
+      }
+
       if (data.reply) {
         newMessages.push({
           author: "AgentSafe Agent",
