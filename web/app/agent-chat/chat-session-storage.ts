@@ -1,6 +1,7 @@
 import { CHAT_AUTH_TTL_MS } from "@/lib/chat/auth-message";
 import type {
   ChatAuth,
+  ChatBlink,
   ChatMessage,
   HistoryMessage,
   InitialChatSession,
@@ -106,13 +107,35 @@ function isChatMessage(value: unknown): value is ChatMessage {
   }
 
   const message = value as Partial<ChatMessage>;
-  return (
+  const hasBaseShape =
     typeof message.author === "string" &&
     typeof message.body === "string" &&
-    (message.align === "left" || message.align === "right") &&
-    (message.kind === "user" ||
-      message.kind === "agent" ||
-      message.kind === "tool")
+    (message.align === "left" || message.align === "right");
+
+  if (!hasBaseShape) {
+    return false;
+  }
+
+  if (message.kind === "blink") {
+    return isChatBlink(message.blink);
+  }
+
+  return (
+    message.kind === "user" || message.kind === "agent" || message.kind === "tool"
+  );
+}
+
+function isChatBlink(value: unknown): value is ChatBlink {
+  if (typeof value !== "object" || value === null) {
+    return false;
+  }
+
+  const blink = value as Partial<ChatBlink>;
+  return (
+    blink.type === "owner_force_transfer" &&
+    blink.reason === "onetime_limit_exceeded" &&
+    typeof blink.recipient === "string" &&
+    typeof blink.amount === "string"
   );
 }
 

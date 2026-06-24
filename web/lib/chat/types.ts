@@ -5,6 +5,13 @@ export type ToolCallResult = {
   args: Record<string, unknown>;
 };
 
+export type OwnerApprovalRequest = {
+  type: "owner_force_transfer";
+  reason: "onetime_limit_exceeded";
+  recipient: string;
+  amount: string;
+};
+
 export type ChatExecutionContext = {
   owner: PublicKey;
   tokenMint: PublicKey;
@@ -44,5 +51,6 @@ export type OpenRouterResult = {
 export type ChatCompletionResult = {
   reply: string;
   toolCalls: ToolCallResult[];
+  approvalRequests: OwnerApprovalRequest[];
   messages: ChatMessage[];
 };

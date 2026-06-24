@@ -12,6 +12,7 @@
   "dependencies": {
     "@anchor-lang/core": "1.0.2",
     "@coral-xyz/anchor": "^0.32.1",
+    "@dialectlabs/blinks": "^0.22.5",
     "@noble/curves": "^1.9.7",
     "@solana/actions": "^1.6.6",
     "@solana/spl-token": "0.4.14",

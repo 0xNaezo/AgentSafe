@@ -51,6 +51,14 @@ export const toolResultSummarySchema = z.union([
   }),
   z.object({
     executed: z.literal(false),
+    requiresOwnerApproval: z.literal(true),
+    approvalType: z.literal("owner_force_transfer"),
+    reason: z.literal("onetime_limit_exceeded"),
+    recipient: z.string(),
+    amount: z.string(),
+  }),
+  z.object({
+    executed: z.literal(false),
     reason: z.string(),
   }),
 ]);
