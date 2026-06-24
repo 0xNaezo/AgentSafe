@@ -46,7 +46,7 @@ export function AgentSafeBlink({
     return (
       <div className={className}>
         <BlinkShell>
-          <div className="h-48 animate-pulse rounded-lg bg-slate-100" />
+          <div className="h-48 animate-pulse rounded-lg bg-zinc-100" />
         </BlinkShell>
       </div>
     );
@@ -93,7 +93,7 @@ function QuietBlinkLayout(props: BaseBlinkLayoutProps) {
 
 function BlinkShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="agentsafe-blink-shell w-full min-w-0 max-w-[560px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm sm:min-w-[420px]">
+    <div className="agentsafe-blink-shell w-full min-w-0 max-w-[560px] overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50  sm:min-w-[420px]">
       {children}
     </div>
   );

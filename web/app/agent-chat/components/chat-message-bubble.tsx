@@ -17,24 +17,24 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
   return (
     <div className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
       {!isUser && (
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
+        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-white">
           <Icon size={17} aria-hidden="true" />
         </div>
       )}
       <div
-        className={`${isBlink ? "w-full max-w-[640px]" : "max-w-[760px]"} rounded-lg border p-4 ${
+        className={`${isBlink ? "w-full max-w-[640px]" : isUser ? "max-w-[500px]" : "max-w-[760px]"} ${
           isUser
-            ? "border-slate-950 bg-slate-950 text-white"
-            : "border-slate-200 bg-slate-50 text-slate-800"
+            ? "rounded-2xl bg-zinc-900 px-4 py-3 text-white"
+            : "py-2 text-zinc-800"
         }`}
       >
-        <p
-          className={`text-xs font-semibold ${isUser ? "text-slate-300" : "text-slate-500"}`}
-        >
-          {message.author}
-        </p>
+        {!isUser && (
+          <p className="text-xs font-semibold text-zinc-500">
+            {message.author}
+          </p>
+        )}
         {isBlink && message.blink ? (
-          <div className="mt-3">
+          <div className={isUser ? "mt-2" : "mt-3"}>
             <AgentSafeBlink
               amount={message.blink.amount}
               recipient={message.blink.recipient}
@@ -43,10 +43,10 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
           </div>
         ) : (
           <div
-            className={`mt-2 text-sm leading-6 [&_code]:rounded [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-xs [&_pre]:rounded-lg [&_pre]:p-3 ${
+            className={`${isUser ? "" : "mt-2"} text-sm leading-6 [&_code]:rounded [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-xs [&_pre]:rounded-lg [&_pre]:p-3 ${
               isUser
-                ? "[&_code]:bg-slate-800 [&_pre]:bg-slate-800"
-                : "[&_code]:bg-slate-100 [&_pre]:bg-slate-100"
+                ? "[&_code]:bg-zinc-800 [&_pre]:bg-zinc-800"
+                : "[&_code]:bg-zinc-100 [&_pre]:bg-zinc-100"
             }`}
           >
             <ReactMarkdown remarkPlugins={[remarkGfm]}>
@@ -55,11 +55,6 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
           </div>
         )}
       </div>
-      {isUser && (
-        <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-white text-slate-600">
-          <Icon size={17} aria-hidden="true" />
-        </div>
-      )}
     </div>
   );
 }

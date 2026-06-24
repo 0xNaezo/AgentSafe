@@ -161,7 +161,7 @@ export function WalletConnect() {
         aria-controls={isOpen ? `${toggleButtonId}-menu` : undefined}
         aria-expanded={isOpen}
         aria-haspopup={opensMenu ? "menu" : undefined}
-        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800"
+        className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white  transition hover:bg-zinc-800"
         id={toggleButtonId}
         type="button"
         onClick={isConnected ? toggleMenu : handleConnect}
@@ -173,7 +173,7 @@ export function WalletConnect() {
       {isOpen && (
         <div
           aria-labelledby={toggleButtonId}
-          className="absolute right-0 top-12 z-20 grid min-w-56 gap-1 rounded-lg border border-slate-200 bg-white p-2 text-slate-950 shadow-lg"
+          className="absolute right-0 top-12 z-20 grid min-w-56 gap-1 rounded-lg border border-zinc-200 bg-zinc-50 p-2 text-zinc-950 shadow-lg"
           id={`${toggleButtonId}-menu`}
           onKeyDown={handleMenuKeyDown}
           ref={menuRef}
@@ -200,7 +200,7 @@ export function WalletConnect() {
               return (
                 <button
                   aria-disabled={isUnsupported}
-                  className="rounded-md px-3 py-2 text-left text-sm font-semibold transition hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
+                  className="rounded-md px-3 py-2 text-left text-sm font-semibold transition hover:bg-zinc-50 disabled:cursor-not-allowed disabled:text-zinc-400"
                   disabled={isUnsupported}
                   key={walletOption.adapter.name}
                   ref={(element) => {
