@@ -3,11 +3,15 @@
 import "@dialectlabs/blinks/index.css";
 
 import {
+  BaseBlinkLayout,
   Blink,
   BlockchainIds,
   createSignMessageText,
   useBlink,
+  useBaseLayoutPropNormalizer,
   verifySignMessageData,
+  type BaseBlinkLayoutProps,
+  type BlinkProps,
   type SignMessageData,
 } from "@dialectlabs/blinks";
 import { BlinkSolanaConfig } from "@dialectlabs/blinks-core/solana";
@@ -64,12 +68,25 @@ export function AgentSafeBlink({
         <Blink
           blink={blink}
           adapter={adapter}
+          _Layout={QuietBlinkLayout}
+          {...quietBlinkWarningsProps}
           securityLevel="all"
           stylePreset="x-light"
         />
       </BlinkShell>
     </div>
   );
+}
+
+const quietBlinkWarningsProps = {
+  disableWarnings: true,
+  hideUnregisteredWarning: true,
+} as Pick<BlinkProps, never>;
+
+function QuietBlinkLayout(props: BaseBlinkLayoutProps) {
+  const normalizedProps = useBaseLayoutPropNormalizer(props);
+
+  return <BaseBlinkLayout {...normalizedProps} disclaimer={null} />;
 }
 
 function BlinkShell({ children }: { children: React.ReactNode }) {
