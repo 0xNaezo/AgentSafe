@@ -91,7 +91,7 @@ function QuietBlinkLayout(props: BaseBlinkLayoutProps) {
 
 function BlinkShell({ children }: { children: React.ReactNode }) {
   return (
-    <div className="w-full min-w-0 max-w-[560px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm sm:min-w-[420px]">
+    <div className="agentsafe-blink-shell w-full min-w-0 max-w-[560px] overflow-hidden rounded-lg border border-slate-200 bg-white shadow-sm sm:min-w-[420px]">
       {children}
     </div>
   );

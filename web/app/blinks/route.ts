@@ -89,7 +89,13 @@ export const GET = async (req: Request) => {
     type: "action",
     title: "AgentSafe: Force Transfer",
     icon: new URL("/logo.png", requestUrl.origin).toString(),
-    description: `AI Agent has exceeded the limit. Confirm the transfer of ${amount} USDC to the address ${recipient} with Owner rights`,
+    description: [
+      "Agent exceeded the limit.",
+      `- Address - ${recipient}`,
+      `- Amount - ${amount} USDC`,
+      "",
+      "Note: This is a single-use action. Once confirmed on-chain, please ignore this card",
+    ].join("\n"),
     label: "Approve Transfer",
   };
 

@@ -63,6 +63,15 @@ a {
   position: relative;
 }
 
+.agentsafe-blink-shell .blink-image {
+  max-height: none;
+}
+
+.agentsafe-blink-shell .blink-image img {
+  aspect-ratio: 16 / 9;
+  object-fit: cover;
+}
+
 @keyframes copy-pop {
   0% {
     transform: scale(1);
