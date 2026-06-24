@@ -23,6 +23,7 @@ type ToolExecutionResult =
       reason: "onetime_limit_exceeded";
       recipient: string;
       amount: string;
+      tokenMint: string;
     }
   | {
       executed: false;
@@ -147,6 +148,7 @@ export async function executeToolCall(
         reason: "onetime_limit_exceeded",
         recipient: parsedArguments.args.address.toBase58(),
         amount: parsedArguments.args.amount,
+        tokenMint: context.tokenMint.toBase58(),
       };
     }
 

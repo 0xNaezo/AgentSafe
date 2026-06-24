@@ -6,6 +6,7 @@ export type ChatBlink = {
   reason: "onetime_limit_exceeded";
   recipient: string;
   amount: string;
+  tokenMint: string;
 };
 
 export type ChatMessageKind = "user" | "agent" | "tool" | "blink";
