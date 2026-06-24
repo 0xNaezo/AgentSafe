@@ -10,6 +10,7 @@ export type OwnerApprovalRequest = {
   reason: "onetime_limit_exceeded";
   recipient: string;
   amount: string;
+  tokenMint: string;
 };
 
 export type ChatExecutionContext = {

@@ -38,6 +38,7 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
             <AgentSafeBlink
               amount={message.blink.amount}
               recipient={message.blink.recipient}
+              tokenMint={message.blink.tokenMint}
             />
           </div>
         ) : (

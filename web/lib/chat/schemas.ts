@@ -56,6 +56,7 @@ export const toolResultSummarySchema = z.union([
     reason: z.literal("onetime_limit_exceeded"),
     recipient: z.string(),
     amount: z.string(),
+    tokenMint: z.string(),
   }),
   z.object({
     executed: z.literal(false),

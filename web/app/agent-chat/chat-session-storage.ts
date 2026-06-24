@@ -135,7 +135,8 @@ function isChatBlink(value: unknown): value is ChatBlink {
     blink.type === "owner_force_transfer" &&
     blink.reason === "onetime_limit_exceeded" &&
     typeof blink.recipient === "string" &&
-    typeof blink.amount === "string"
+    typeof blink.amount === "string" &&
+    typeof blink.tokenMint === "string"
   );
 }
 

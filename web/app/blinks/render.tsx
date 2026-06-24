@@ -25,6 +25,7 @@ import { RPC_URL } from "@/lib/solana/config";
 type AgentSafeBlinkProps = {
   recipient: string;
   amount: string;
+  tokenMint: string;
   className?: string;
 };
 
@@ -32,10 +33,11 @@ export function AgentSafeBlink({
   amount,
   className,
   recipient,
+  tokenMint,
 }: AgentSafeBlinkProps) {
   const blinkApiUrl = useMemo(
-    () => buildBlinkApiUrl(recipient, amount),
-    [amount, recipient],
+    () => buildBlinkApiUrl(recipient, amount, tokenMint),
+    [amount, recipient, tokenMint],
   );
   const adapter = useAgentSafeBlinkAdapter();
   const { blink, isLoading } = useBlink({ url: blinkApiUrl });
@@ -97,9 +99,13 @@ function BlinkShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function buildBlinkApiUrl(recipient: string, amount: string) {
+function buildBlinkApiUrl(recipient: string, amount: string, tokenMint: string) {
   const path = "/blinks";
-  const searchParams = new URLSearchParams({ to: recipient, amount });
+  const searchParams = new URLSearchParams({
+    to: recipient,
+    amount,
+    tokenMint,
+  });
 
   if (typeof window === "undefined") {
     return `${path}?${searchParams.toString()}`;

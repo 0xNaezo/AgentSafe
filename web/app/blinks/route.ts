@@ -80,26 +80,40 @@ async function parseBody(req: Request): Promise<ActionPostRequest> {
 }
 
 export const GET = async (req: Request) => {
-  const requestUrl = new URL(req.url);
+  try {
+    const requestUrl = new URL(req.url);
 
-  const amount = requestUrl.searchParams.get("amount") || 0;
-  const recipient = requestUrl.searchParams.get("to") || "";
+    const amount = requestUrl.searchParams.get("amount") || 0;
+    const recipient = parsePublicKey(requestUrl.searchParams.get("to"), "to");
+    const tokenMint = parsePublicKey(
+      requestUrl.searchParams.get("tokenMint"),
+      "tokenMint",
+    );
 
-  const payload: ActionGetResponse = {
-    type: "action",
-    title: "AgentSafe: Force Transfer",
-    icon: new URL("/logo.png", requestUrl.origin).toString(),
-    description: [
-      "Agent exceeded the limit.",
-      `- Address - ${recipient}`,
-      `- Amount - ${amount} USDC`,
-      "",
-      "Note: This is a single-use action. Once confirmed on-chain, please ignore this card",
-    ].join("\n"),
-    label: "Approve Transfer",
-  };
+    const payload: ActionGetResponse = {
+      type: "action",
+      title: "AgentSafe: Force Transfer",
+      icon: new URL("/logo.png", requestUrl.origin).toString(),
+      description: [
+        "Agent exceeded the limit.",
+        `- Address - ${recipient.toBase58()}`,
+        `- Amount - ${amount} USDC`,
+        `- Token mint - ${tokenMint.toBase58()}`,
+        "",
+        "Note: This is a single-use action. Once confirmed on-chain, please ignore this card",
+      ].join("\n"),
+      label: "Approve Transfer",
+    };
 
-  return Response.json(payload, { headers });
+    return Response.json(payload, { headers });
+  } catch (error) {
+    if (error instanceof BadRequestError) {
+      return jsonError(error.message);
+    }
+
+    console.error("Blink GET failed:", error);
+    return jsonError("Unable to create action metadata", 500);
+  }
 };
 
 export const OPTIONS = async () => Response.json(null, { headers });
@@ -111,10 +125,13 @@ export const POST = async (req: Request) => {
     const amount = parseAmount(requestUrl.searchParams.get("amount"));
 
     const recipient = parsePublicKey(requestUrl.searchParams.get("to"), "to");
+    const tokenMint = parsePublicKey(
+      requestUrl.searchParams.get("tokenMint"),
+      "tokenMint",
+    );
 
     const body = await parseBody(req);
     const owner = parsePublicKey(body.account, "account");
-    const tokenMint = new PublicKey(process.env.NEXT_PUBLIC_DEMO_TOKEN_MINT!);
 
     const [vaultPda] = deriveVaultPda(owner, tokenMint);
     const [vaultTokenAccountPda] = deriveVaultTokenAccountPda(vaultPda);

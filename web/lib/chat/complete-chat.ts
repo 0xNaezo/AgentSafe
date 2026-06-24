@@ -123,6 +123,7 @@ export async function completeChat(
             reason: toolResult.reason,
             recipient: toolResult.recipient,
             amount: toolResult.amount,
+            tokenMint: toolResult.tokenMint,
           });
         }
 
