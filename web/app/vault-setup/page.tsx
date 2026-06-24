@@ -181,13 +181,13 @@ export default function VaultSetupPage() {
           aria-label="Vault policy configuration"
           onSubmit={handleSubmit}
         >
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-5 ">
             <div className="flex flex-wrap items-start justify-between gap-3">
               <div>
-                <p className="text-sm font-medium text-slate-500">
+                <p className="text-sm font-medium text-zinc-500">
                   Create vault
                 </p>
-                <h2 className="mt-1 text-lg font-semibold text-slate-950">
+                <h2 className="mt-1 text-lg font-semibold text-zinc-950">
                   Owner and agent
                 </h2>
               </div>
@@ -278,18 +278,18 @@ export default function VaultSetupPage() {
             </div>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-5 ">
             <div className="flex items-center justify-between gap-3">
               <div>
-                <p className="text-sm font-medium text-slate-500">
+                <p className="text-sm font-medium text-zinc-500">
                   Policy model
                 </p>
-                <h2 className="mt-1 text-lg font-semibold text-slate-950">
+                <h2 className="mt-1 text-lg font-semibold text-zinc-950">
                   Spending limits
                 </h2>
               </div>
               <ListChecks
-                className="text-slate-500"
+                className="text-zinc-500"
                 size={21}
                 aria-hidden="true"
               />
@@ -308,19 +308,19 @@ export default function VaultSetupPage() {
               />
             </div>
 
-            <div className="mt-5 grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
+            <div className="mt-5 grid gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-4 sm:grid-cols-[1fr_auto] sm:items-center">
               <div>
-                <p className="text-sm font-semibold text-slate-950">
+                <p className="text-sm font-semibold text-zinc-950">
                   Pause switch
                 </p>
-                <p className="mt-1 text-sm leading-6 text-slate-600">
+                <p className="mt-1 text-sm leading-6 text-zinc-600">
                   The current on-chain MVP stores spending limits only; pause
                   can be added once policy state grows.
                 </p>
               </div>
-              <label className="inline-flex w-fit items-center gap-3 rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm font-semibold text-slate-700 shadow-sm">
+              <label className="inline-flex w-fit items-center gap-3 rounded-lg border border-zinc-200 bg-zinc-50 px-3 py-2 text-sm font-semibold text-zinc-700 ">
                 <input
-                  className="h-4 w-4 accent-slate-950"
+                  className="h-4 w-4 accent-zinc-950"
                   type="checkbox"
                   name="pause-vault"
                   disabled
@@ -333,9 +333,9 @@ export default function VaultSetupPage() {
 
           {submitState.kind !== "idle" && <StatusPanel state={submitState} />}
 
-          <div className="flex flex-wrap justify-end gap-2 rounded-lg border border-slate-200 bg-white p-4 shadow-sm">
+          <div className="flex flex-wrap justify-end gap-2 rounded-lg border border-zinc-200 bg-zinc-50 p-4 ">
             <button
-              className="inline-flex h-10 items-center justify-center rounded-lg border border-slate-200 bg-white px-4 text-sm font-semibold text-slate-800 shadow-sm transition hover:border-slate-300 hover:bg-slate-50 disabled:cursor-not-allowed disabled:text-slate-400"
+              className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-200 bg-zinc-50 px-4 text-sm font-semibold text-zinc-800  transition hover:border-zinc-300 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:text-zinc-400"
               disabled={submitState.kind === "loading"}
               type="button"
               onClick={() => {
@@ -349,7 +349,7 @@ export default function VaultSetupPage() {
               Clear status
             </button>
             <button
-              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:bg-slate-400"
+              className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white  transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:bg-zinc-400"
               type="submit"
               disabled={!canSubmit}
             >
@@ -360,31 +360,31 @@ export default function VaultSetupPage() {
         </form>
 
         <aside className="grid content-start gap-4">
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-5 ">
             <div className="flex items-center gap-3">
               <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-sky-100 bg-sky-50 text-sky-700">
                 <Info size={19} aria-hidden="true" />
               </div>
               <div>
-                <p className="text-sm font-medium text-slate-500">
+                <p className="text-sm font-medium text-zinc-500">
                   MVP constraint
                 </p>
-                <h2 className="text-lg font-semibold text-slate-950">
+                <h2 className="text-lg font-semibold text-zinc-950">
                   One mint, one policy
                 </h2>
               </div>
             </div>
-            <p className="mt-4 text-sm leading-6 text-slate-600">
+            <p className="mt-4 text-sm leading-6 text-zinc-600">
               This form calls the Anchor `initialize` instruction. It creates
               the vault state account and the program-owned token vault account.
             </p>
           </div>
 
-          <div className="rounded-lg border border-slate-200 bg-white p-5 shadow-sm">
-            <p className="text-sm font-medium text-slate-500">
+          <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-5 ">
+            <p className="text-sm font-medium text-zinc-500">
               Policy checklist
             </p>
-            <div className="mt-4 divide-y divide-slate-100">
+            <div className="mt-4 divide-y divide-zinc-100">
               {setupChecks.map((check) => (
                 <div
                   key={check}
@@ -395,7 +395,7 @@ export default function VaultSetupPage() {
                     size={17}
                     aria-hidden="true"
                   />
-                  <p className="text-sm leading-6 text-slate-700">{check}</p>
+                  <p className="text-sm leading-6 text-zinc-700">{check}</p>
                 </div>
               ))}
             </div>
@@ -417,7 +417,7 @@ function Field({ children, htmlFor, icon: Icon, label }: FieldProps) {
   return (
     <div>
       <label
-        className="mb-2 flex items-center gap-2 text-sm font-semibold text-slate-700"
+        className="mb-2 flex items-center gap-2 text-sm font-semibold text-zinc-700"
         htmlFor={htmlFor}
       >
         <Icon size={16} aria-hidden="true" />
@@ -441,18 +441,18 @@ function LimitField({
 
   return (
     <label className="block" htmlFor={inputId}>
-      <span className="mb-2 block text-sm font-semibold text-slate-700">
+      <span className="mb-2 block text-sm font-semibold text-zinc-700">
         {label}
       </span>
-      <div className="grid grid-cols-[1fr_auto] overflow-hidden rounded-lg border border-slate-200 bg-white focus-within:border-slate-400">
+      <div className="grid grid-cols-[1fr_auto] overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50 focus-within:border-zinc-400">
         <input
           id={inputId}
-          className="min-h-11 min-w-0 border-0 bg-transparent px-3 text-sm font-semibold text-slate-950 outline-none"
+          className="min-h-11 min-w-0 border-0 bg-transparent px-3 text-sm font-semibold text-zinc-950 outline-none"
           value={value}
           onChange={(event) => onChange(event.target.value)}
           inputMode="decimal"
         />
-        <span className="flex items-center border-l border-slate-200 px-3 text-sm font-semibold text-slate-500">
+        <span className="flex items-center border-l border-zinc-200 px-3 text-sm font-semibold text-zinc-500">
           token units
         </span>
       </div>
@@ -470,10 +470,10 @@ function ReadonlyAddress({ id, value }: { id: string; value: string }) {
   };
 
   return (
-    <div className="grid grid-cols-[1fr_auto] overflow-hidden rounded-lg border border-slate-200 bg-white">
+    <div className="grid grid-cols-[1fr_auto] overflow-hidden rounded-lg border border-zinc-200 bg-zinc-50">
       <input
         id={id}
-        className="min-h-11 min-w-0 border-0 bg-transparent px-3 font-mono text-sm font-semibold text-slate-950 outline-none"
+        className="min-h-11 min-w-0 border-0 bg-transparent px-3 font-mono text-sm font-semibold text-zinc-950 outline-none"
         value={value}
         readOnly
       />
@@ -481,7 +481,7 @@ function ReadonlyAddress({ id, value }: { id: string; value: string }) {
         className={`relative overflow-hidden h-11 min-w-24 border-l text-xs font-bold transition ${
           copied
             ? "border-emerald-200 bg-emerald-100 text-emerald-800 ring-2 ring-inset ring-emerald-200"
-            : "border-slate-200 bg-white text-slate-600 hover:bg-slate-50"
+            : "border-zinc-200 bg-zinc-50 text-zinc-600 hover:bg-zinc-50"
         }`}
         type="button"
         aria-label={copied ? "Address copied" : "Copy address"}
@@ -490,7 +490,7 @@ function ReadonlyAddress({ id, value }: { id: string; value: string }) {
       >
         <div
           className={`flex flex-col transition-transform duration-300 ease-[cubic-bezier(0.34,1.56,0.64,1)] ${
-            copied ? "-translate-y-1/2" : "translate-y-0"
+            copied ? "-tranzinc-y-1/2" : "tranzinc-y-0"
           }`}
         >
           <span className="flex h-11 items-center justify-center gap-1 px-3">

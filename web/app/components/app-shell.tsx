@@ -4,73 +4,83 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import type { ReactNode } from "react";
 import {
+  ClipboardList,
   LayoutDashboard,
   MessagesSquare,
   ShieldCheck,
   SlidersHorizontal,
 } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
-import { WalletConnect } from "./wallet-connect";
 
-type AppRoute = "/" | "/vault-setup" | "/agent-chat";
+type AppRoute = "/" | "/vault-settings" | "/agent-chat" | "/vault-metadata";
 
 type AppShellProps = {
   children: ReactNode;
 };
 
-const navItems: Array<{
+type NavItem = {
   href: AppRoute;
   label: string;
-  title: string;
+  pageTitle: string;
   icon: LucideIcon;
-}> = [
+};
+
+const mainNavItems: NavItem[] = [
   {
     href: "/",
     label: "Dashboard",
-    title: "Policy Vault Dashboard",
+    pageTitle: "Dashboard",
     icon: LayoutDashboard,
   },
   {
-    href: "/vault-setup",
-    label: "Vault setup",
-    title: "Vault Setup",
+    href: "/vault-settings",
+    label: "Vault Settings",
+    pageTitle: "VaultSettings",
     icon: SlidersHorizontal,
   },
   {
     href: "/agent-chat",
-    label: "Agent chat",
-    title: "Agent Chat",
+    label: "Chat",
+    pageTitle: "Chat",
     icon: MessagesSquare,
   },
 ];
+
+const bottomNavItems: NavItem[] = [
+  {
+    href: "/vault-metadata",
+    label: "Vault Metadata",
+    pageTitle: "VaultMetadataPage",
+    icon: ClipboardList,
+  },
+];
+
+const allNavItems = [...mainNavItems, ...bottomNavItems];
 
 export function AppShell({ children }: AppShellProps) {
   const pathname = usePathname();
   const activeHref = getActiveHref(pathname);
   const activeItem =
-    navItems.find((item) => item.href === activeHref) ?? navItems[0];
+    allNavItems.find((item) => item.href === activeHref) ?? allNavItems[0];
 
   return (
-    <main className="min-h-screen bg-[#f7f8fb] text-slate-950">
-      <div className="mx-auto flex min-h-screen w-full max-w-7xl flex-col px-4 py-4 sm:px-6 lg:px-8">
-        <header className="grid shrink-0 gap-4 border-b border-slate-200 pb-4 lg:grid-cols-[auto_1fr_auto] lg:items-center">
-          <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-slate-950 text-white shadow-sm">
-              <ShieldCheck size={22} aria-hidden="true" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-slate-500">AgentSafe</p>
-              <h1 className="text-xl font-semibold tracking-normal text-slate-950">
-                {activeItem.title}
-              </h1>
-            </div>
+    <div className="flex min-h-screen bg-zinc-50 text-zinc-950">
+      {/* Sidebar */}
+      <aside className="app-sidebar fixed left-0 top-0 z-30 flex flex-col">
+        {/* Logo */}
+        <div className="flex items-center gap-2.5 px-5 py-5">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 text-white">
+            <ShieldCheck size={18} aria-hidden="true" />
           </div>
+          <span className="text-[0.9375rem] font-bold text-zinc-950">
+            AgentSafe
+          </span>
+        </div>
 
-          <nav
-            aria-label="Primary"
-            className="flex min-w-0 flex-wrap items-center gap-2 lg:justify-end"
-          >
-            {navItems.map((item) => {
+        {/* Main navigation */}
+        <nav aria-label="Primary" className="mt-2 flex flex-1 flex-col px-3">
+          <div className="space-y-0.5">
+            {mainNavItems.map((item) => {
               const Icon = item.icon;
               const isActive = item.href === activeHref;
 
@@ -79,33 +89,60 @@ export function AppShell({ children }: AppShellProps) {
                   key={item.href}
                   href={item.href}
                   aria-current={isActive ? "page" : undefined}
-                  className={`inline-flex h-10 items-center justify-center gap-2 rounded-lg border px-3 text-sm font-semibold shadow-sm transition ${
-                    isActive
-                      ? "border-slate-950 bg-white text-slate-950 ring-2 ring-slate-950/10"
-                      : "border-slate-200 bg-white text-slate-700 hover:border-slate-300 hover:bg-slate-50"
-                  }`}
+                  data-active={isActive}
+                  className="app-sidebar-nav-item"
                 >
-                  <Icon size={17} aria-hidden="true" />
+                  <Icon size={18} aria-hidden="true" />
                   {item.label}
                 </Link>
               );
             })}
-          </nav>
-
-          <div className="flex items-center gap-2 lg:justify-end">
-            <WalletConnect />
           </div>
-        </header>
 
-        {children}
+          {/* Bottom items */}
+          <div className="mt-auto border-t border-zinc-100 pb-4 pt-3">
+            {bottomNavItems.map((item) => {
+              const Icon = item.icon;
+              const isActive = item.href === activeHref;
+
+              return (
+                <Link
+                  key={item.href}
+                  href={item.href}
+                  aria-current={isActive ? "page" : undefined}
+                  data-active={isActive}
+                  className="app-sidebar-nav-item"
+                >
+                  <Icon size={18} aria-hidden="true" />
+                  {item.label}
+                </Link>
+              );
+            })}
+          </div>
+        </nav>
+      </aside>
+
+      {/* Main content area */}
+      <div
+        className="flex min-h-screen flex-1 flex-col"
+        style={{ marginLeft: "var(--sidebar-width)" }}
+      >
+
+
+        {/* Page content */}
+        <main className="flex flex-1 flex-col px-8 py-6">{children}</main>
       </div>
-    </main>
+    </div>
   );
 }
 
 function getActiveHref(pathname: string): AppRoute {
-  if (pathname.startsWith("/vault-setup")) {
-    return "/vault-setup";
+  if (pathname.startsWith("/vault-settings") || pathname.startsWith("/vault-setup")) {
+    return "/vault-settings";
+  }
+
+  if (pathname.startsWith("/vault-metadata")) {
+    return "/vault-metadata";
   }
 
   if (pathname.startsWith("/agent-chat")) {

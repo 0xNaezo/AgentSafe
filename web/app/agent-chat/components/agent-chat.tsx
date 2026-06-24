@@ -14,7 +14,6 @@ import {
   isChatAuthValid,
   writeStoredChatSession,
 } from "../chat-session-storage";
-import { AgentChatSidebar } from "./agent-chat-sidebar";
 import { ChatPanel } from "./chat-panel";
 import type {
   ChatAuth,
@@ -363,7 +362,7 @@ function AgentChatSession({
   }
 
   return (
-    <section className="grid flex-1 gap-4 py-5 lg:content-start lg:grid-cols-[1fr_0.45fr]">
+    <section className="flex flex-1 flex-col py-0">
       <ChatPanel
         messages={messages}
         input={input}
@@ -378,7 +377,6 @@ function AgentChatSession({
         onSend={handleSend}
         onUnlock={authorizeChat}
       />
-      <AgentChatSidebar />
     </section>
   );
 }

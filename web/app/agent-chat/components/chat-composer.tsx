@@ -1,4 +1,4 @@
-import { Send } from "lucide-react";
+import { ArrowUp, Paperclip } from "lucide-react";
 import type { KeyboardEvent, RefObject } from "react";
 
 type ChatComposerProps = {
@@ -28,30 +28,39 @@ export function ChatComposer({
   }
 
   return (
-    <div className="border-t border-slate-200 p-5">
-      <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3 sm:grid-cols-[1fr_auto]">
-        <label className="sr-only" htmlFor="agent-message">
-          Message
-        </label>
-        <textarea
-          ref={textareaRef}
-          id="agent-message"
-          value={input}
-          onChange={(e) => onInputChange(e.target.value)}
-          onKeyDown={handleKeyDown}
-          placeholder="Type your message..."
-          disabled={loading}
-          className="resize-none overflow-y-auto rounded-lg border border-slate-200 bg-white px-3 py-3 text-sm leading-6 text-slate-950 outline-none transition focus:border-slate-400 disabled:cursor-not-allowed disabled:opacity-50"
-          style={{ height: "52px" }}
-        />
+    <div className="border-t border-zinc-200 px-5 py-3">
+      <div className="flex items-end gap-3">
+        <div className="flex flex-1 items-end gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">
+          <button
+            type="button"
+            className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg text-zinc-400 transition hover:text-zinc-600"
+            aria-label="Attach file"
+          >
+            <Paperclip size={18} aria-hidden="true" />
+          </button>
+          <label className="sr-only" htmlFor="agent-message">
+            Message
+          </label>
+          <textarea
+            ref={textareaRef}
+            id="agent-message"
+            value={input}
+            onChange={(e) => onInputChange(e.target.value)}
+            onKeyDown={handleKeyDown}
+            placeholder="Ask the agent to make a payment..."
+            disabled={loading}
+            className="flex-1 resize-none overflow-y-auto bg-transparent py-1.5 text-sm leading-6 text-zinc-950 outline-none placeholder:text-zinc-400 disabled:cursor-not-allowed disabled:opacity-50"
+            style={{ height: "36px" }}
+          />
+        </div>
         <button
           onClick={onSend}
           disabled={loading || !input.trim()}
-          className="inline-flex h-11 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50 sm:self-end"
+          className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-zinc-900 text-white  transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
           type="button"
+          aria-label="Send message"
         >
-          <Send size={17} aria-hidden="true" />
-          Send
+          <ArrowUp size={18} aria-hidden="true" />
         </button>
       </div>
     </div>

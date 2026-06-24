@@ -1,5 +1,7 @@
-import { Bot, LockKeyhole, MessagesSquare } from "lucide-react";
+import { Bot, LockKeyhole, RefreshCcw } from "lucide-react";
 import type { RefObject } from "react";
+import { AddressBadge } from "@/app/components/address-badge";
+import { StatusDot } from "@/app/components/status-dot";
 import { ChatComposer } from "./chat-composer";
 import { ChatMessageBubble } from "./chat-message-bubble";
 import type { ChatMessage } from "../types";
@@ -34,32 +36,47 @@ export function ChatPanel({
   onUnlock,
 }: ChatPanelProps) {
   return (
-    <div className="relative flex min-h-0 flex-col">
-      <div className="flex flex-1 flex-col rounded-lg border border-slate-200 bg-white shadow-sm lg:absolute lg:inset-0 lg:h-full">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-slate-200 p-5">
+    <div className="flex min-h-0 flex-1 flex-col">
+      <div className="flex flex-1 flex-col rounded-lg border border-zinc-200 bg-zinc-50 ">
+        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 px-5 py-4">
           <div className="flex items-center gap-3">
-            <div className="flex h-10 w-10 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-700">
-              <MessagesSquare size={19} aria-hidden="true" />
+            <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-900 text-white">
+              <Bot size={20} aria-hidden="true" />
             </div>
             <div>
-              <p className="text-sm font-medium text-slate-500">
-                Reference AI intent layer
-              </p>
-              <h2 className="text-lg font-semibold text-slate-950">
-                Payment request chat
+              <h2 className="text-sm font-bold text-zinc-950">
+                AgentSafe Agent
               </h2>
+              <div className="mt-0.5 flex items-center gap-1">
+                <AddressBadge
+                  address="3Kp9mNt2"
+                  label="Agent wallet"
+                  truncateChars={4}
+                  showCopy
+                  className="text-xs"
+                />
+              </div>
             </div>
           </div>
-          <div className="inline-flex items-center gap-2 rounded-lg border border-slate-200 bg-slate-50 px-3 py-2 text-sm font-semibold text-slate-600">
-            <LockKeyhole size={16} aria-hidden="true" />
-            {statusLabel}
+          <div className="flex items-center gap-3">
+            <div className="flex items-center gap-2 text-sm text-zinc-600">
+              <StatusDot color="green" pulse />
+              <span className="font-medium">Vault Active</span>
+            </div>
+            <button
+              type="button"
+              className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600"
+              aria-label="Refresh"
+            >
+              <RefreshCcw size={16} aria-hidden="true" />
+            </button>
           </div>
         </div>
 
         <div className="flex-1 space-y-4 overflow-y-auto p-5">
           {messages.length === 0 && (
             <div className="flex h-full items-center justify-center">
-              <p className="text-sm text-slate-400">
+              <p className="text-sm text-zinc-400">
                 Send a message to start the chat.
               </p>
             </div>
@@ -72,14 +89,14 @@ export function ChatPanel({
           ))}
           {loading && (
             <div className="flex justify-start gap-3">
-              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg border border-slate-200 bg-slate-50 text-slate-600">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-white">
                 <Bot size={17} aria-hidden="true" />
               </div>
-              <div className="max-w-[760px] rounded-lg border border-slate-200 bg-slate-50 p-4 text-slate-800">
-                <p className="text-xs font-semibold text-slate-500">
+              <div className="max-w-[760px] p-4 text-zinc-800">
+                <p className="text-xs font-semibold text-zinc-500">
                   AgentSafe Agent
                 </p>
-                <p className="mt-2 text-sm italic leading-6 text-slate-400">
+                <p className="mt-2 text-sm italic leading-6 text-zinc-400">
                   Thinking...
                 </p>
               </div>
@@ -88,11 +105,11 @@ export function ChatPanel({
         </div>
 
         {restoring ? null : locked ? (
-          <div className="border-t border-slate-200 p-5">
-            <div className="grid gap-3 rounded-lg border border-slate-200 bg-slate-50 p-3">
+          <div className="border-t border-zinc-200 p-5">
+            <div className="grid gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
               <button
                 aria-busy={unlocking}
-                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-slate-950 px-4 text-sm font-semibold text-white shadow-sm transition hover:bg-slate-800 disabled:cursor-not-allowed disabled:opacity-50"
+                className="inline-flex min-h-12 items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white  transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
                 disabled={unlocking}
                 onClick={onUnlock}
                 type="button"
