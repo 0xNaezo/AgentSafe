@@ -1,7 +1,6 @@
 import { Bot, LockKeyhole } from "lucide-react";
 import type { RefObject } from "react";
 import { AddressBadge } from "@/app/components/address-badge";
-import { StatusDot } from "@/app/components/status-dot";
 import { ChatComposer } from "./chat-composer";
 import { ChatMessageBubble } from "./chat-message-bubble";
 import type { ChatMessage } from "../types";
@@ -65,10 +64,11 @@ export function ChatPanel({
             </div>
           </div>
           <div className="flex items-center gap-3">
-            <div className="flex items-center gap-2 text-sm text-zinc-600">
-              <StatusDot color="green" pulse />
-              <span className="font-medium">Vault Active</span>
-            </div>
+            {!locked && !restoring && (
+              <div className="flex items-center gap-2 text-base font-medium text-zinc-600">
+                {statusLabel}
+              </div>
+            )}
           </div>
         </div>
 

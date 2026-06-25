@@ -9,8 +9,8 @@ import { checkAuth } from "./check-auth";
 import { parseExecutionContext } from "./parse-context";
 
 const MAX_MESSAGES = 40;
-const MAX_MESSAGE_CHARS = 4_000;
-const MAX_TOTAL_CHARS = 24_000;
+const MAX_MESSAGE_CHARS = 12_000;
+const MAX_TOTAL_CHARS = 120_000;
 
 function getTextContentLength(content: MessageContent): number {
   if (content === null || content === undefined) {
