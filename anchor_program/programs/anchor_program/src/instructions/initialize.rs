@@ -41,12 +41,13 @@ pub struct Initialize<'info> {
 pub(crate) fn handler(
     ctx: Context<Initialize>,
     daily_limit: u64,
+    hourly_limit: u64,
     onetime_limit: u64,
 ) -> Result<()> {
     let vault_state = &mut ctx.accounts.vault_state;
 
     require!(
-        daily_limit >= onetime_limit,
+        daily_limit >= hourly_limit && hourly_limit >= onetime_limit,
         AgentSafeError::InvalidLimitsConfiguration
     );
 
@@ -56,9 +57,11 @@ pub(crate) fn handler(
     vault_state.vault_bump = ctx.bumps.vault_state;
 
     vault_state.daily_limit = daily_limit;
+    vault_state.hourly_limit = hourly_limit;
     vault_state.onetime_limit = onetime_limit;
 
     vault_state.spent_today = 0;
+    vault_state.spent_hour = 0;
     vault_state.last_reset_time = Clock::get()?.unix_timestamp;
 
     Ok(())
