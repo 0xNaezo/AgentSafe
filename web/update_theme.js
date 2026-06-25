@@ -16,7 +16,7 @@ function walk(dir) {
   return results;
 }
 
-const files = walk('./app');
+const files = walk(path.join(__dirname, 'app'));
 
 files.forEach((file) => {
   let content = fs.readFileSync(file, 'utf8');
@@ -25,10 +25,12 @@ files.forEach((file) => {
   // Replace slate with zinc
   content = content.replace(/slate-/g, 'zinc-');
   
-  // Remove shadows
-  content = content.replace(/shadow-sm/g, '');
-  content = content.replace(/shadow /g, ' ');
-  content = content.replace(/shadow"/g, '"');
+  // Remove standalone shadow utility classes (shadow-sm, shadow) without
+  // damaging classes like drop-shadow-* that contain "shadow" as a substring.
+  // Matches optional Tailwind modifier prefix (e.g. hover:) but requires a
+  // word boundary before "shadow" so "drop-shadow" is left intact.
+  content = content.replace(/(?<=["\s])(?:[\w-]+:)?shadow-sm(?=[\s"])/g, '');
+  content = content.replace(/(?<=["\s])(?:[\w-]+:)?shadow(?=[\s"])/g, '');
   
   // Replace bg-white with bg-zinc-50 on card-like elements (border, rounded)
   // Actually, let's just make all surfaces that had a border and were white become zinc-50
