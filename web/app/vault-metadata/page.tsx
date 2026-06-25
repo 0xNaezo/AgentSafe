@@ -29,7 +29,7 @@ const ASSIGNED_AGENT = "3Kp9mNt2QrXsWfBnD7yLh4cVz8RpKwMtZ6QaPxAgSf1V";
 
 const TOKEN_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
 
-const EXPLORER_BASE = "https://explorer.solana.com/address";
+const EXPLORER_BASE = "https://solscan.io/account";
 
 function explorerUrl(address: string) {
   return `${EXPLORER_BASE}/${address}?cluster=devnet`;

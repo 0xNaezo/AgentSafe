@@ -362,7 +362,7 @@ function AgentChatSession({
   }
 
   return (
-    <section className="flex flex-1 flex-col py-0">
+    <section className="flex flex-1 flex-col min-h-0 py-0">
       <ChatPanel
         messages={messages}
         input={input}

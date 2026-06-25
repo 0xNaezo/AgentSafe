@@ -28,7 +28,7 @@ export function ChatComposer({
   }
 
   return (
-    <div className="border-t border-zinc-200 px-5 py-3">
+    <div className="shrink-0 border-t border-zinc-200 px-5 py-3">
       <div className="flex items-end gap-3">
         <div className="flex flex-1 items-end gap-2 rounded-xl border border-zinc-200 bg-zinc-50 px-3 py-2">
           <button
