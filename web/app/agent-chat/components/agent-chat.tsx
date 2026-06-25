@@ -102,6 +102,7 @@ function AgentChatSession({
       setHistory(session.history);
       setChatAuth(session.chatAuth);
       setUnlockError(null);
+      setPendingImage(null);
       setIsSessionRestored(true);
     });
 
