@@ -1,4 +1,4 @@
-import { Bot, LockKeyhole, RefreshCcw } from "lucide-react";
+import { Bot, LockKeyhole } from "lucide-react";
 import type { RefObject } from "react";
 import { AddressBadge } from "@/app/components/address-badge";
 import { StatusDot } from "@/app/components/status-dot";
@@ -69,13 +69,6 @@ export function ChatPanel({
               <StatusDot color="green" pulse />
               <span className="font-medium">Vault Active</span>
             </div>
-            <button
-              type="button"
-              className="flex h-8 w-8 items-center justify-center rounded-lg text-zinc-400 transition hover:bg-zinc-100 hover:text-zinc-600"
-              aria-label="Refresh"
-            >
-              <RefreshCcw size={16} aria-hidden="true" />
-            </button>
           </div>
         </div>
 

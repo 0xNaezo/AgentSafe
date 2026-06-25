@@ -15,6 +15,7 @@ import {
   generateIdenticonGradient,
 } from "@/app/components/address-badge";
 import { StatusDot } from "@/app/components/status-dot";
+import { UsdcIcon } from "@/app/components/icons/usdc-icon";
 
 /* ─── Mock data ─── */
 
@@ -36,7 +37,6 @@ export default function VaultSettingsPage() {
   const [dailyLimit, setDailyLimit] = useState("5,000.00");
   const [hourlyLimit, setHourlyLimit] = useState("1,000.00");
   const [perPaymentCap, setPerPaymentCap] = useState("500.00");
-  const [approvalThreshold, setApprovalThreshold] = useState("500.00");
 
   const [whitelist, setWhitelist] = useState<WhitelistEntry[]>(INITIAL_WHITELIST);
   const [newAddress, setNewAddress] = useState("");
@@ -109,15 +109,8 @@ export default function VaultSettingsPage() {
             label="Per-payment cap"
             value={perPaymentCap}
             onChange={setPerPaymentCap}
-            subtext=""
-            description="Largest single auto-payment"
-          />
-          <LimitField
-            label="Manual approval threshold"
-            value={approvalThreshold}
-            onChange={setApprovalThreshold}
             subtext="≈ $500.00"
-            description="Above this, owner must approve"
+            description="Above this amount, owner must approve manually"
           />
         </div>
       </div>
@@ -333,8 +326,8 @@ function LimitField({
           value={value}
           onChange={(e) => onChange(e.target.value)}
         />
-        <span className="pointer-events-none absolute right-3 top-1/2 flex -tranzinc-y-1/2 items-center gap-1.5">
-          <span className="h-2 w-2 rounded-full bg-sky-500" aria-hidden="true" />
+        <span className="pointer-events-none absolute right-3 top-1/2 flex -translate-y-1/2 items-center gap-1.5">
+          <UsdcIcon className="h-4 w-4" />
           <span className="text-xs font-semibold text-zinc-500">USDC</span>
         </span>
       </div>
