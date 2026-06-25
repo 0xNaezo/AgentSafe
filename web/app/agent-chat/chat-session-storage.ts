@@ -147,8 +147,8 @@ function isHistoryMessage(value: unknown): value is HistoryMessage {
 
   const message = value as Partial<HistoryMessage>;
   return (
-    (message.role === "user" || message.role === "assistant") &&
-    (typeof message.content === "string" || message.content === null)
+    (message.role === "user" || message.role === "assistant" || message.role === "tool") &&
+    (typeof message.content === "string" || message.content === null || Array.isArray(message.content))
   );
 }
 
