@@ -37,8 +37,8 @@ export function ChatPanel({
 }: ChatPanelProps) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
-      <div className="flex flex-1 flex-col rounded-lg border border-zinc-200 bg-zinc-50 ">
-        <div className="flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 px-5 py-4">
+      <div className="flex flex-1 flex-col rounded-lg border border-zinc-200 bg-zinc-50 min-h-0">
+        <div className="shrink-0 flex flex-wrap items-center justify-between gap-3 border-b border-zinc-200 px-5 py-4">
           <div className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-zinc-900 text-white">
               <Bot size={20} aria-hidden="true" />
@@ -73,7 +73,7 @@ export function ChatPanel({
           </div>
         </div>
 
-        <div className="flex-1 space-y-4 overflow-y-auto p-5">
+        <div className="flex-1 min-h-0 space-y-4 overflow-y-auto p-5">
           {messages.length === 0 && (
             <div className="flex h-full items-center justify-center">
               <p className="text-sm text-zinc-400">
@@ -105,7 +105,7 @@ export function ChatPanel({
         </div>
 
         {restoring ? null : locked ? (
-          <div className="border-t border-zinc-200 p-5">
+          <div className="shrink-0 border-t border-zinc-200 p-5">
             <div className="grid gap-3 rounded-lg border border-zinc-200 bg-zinc-50 p-3">
               <button
                 aria-busy={unlocking}
@@ -130,7 +130,7 @@ export function ChatPanel({
             </div>
           </div>
         ) : (
-          <ChatComposer
+        <ChatComposer
             input={input}
             loading={loading}
             textareaRef={textareaRef}

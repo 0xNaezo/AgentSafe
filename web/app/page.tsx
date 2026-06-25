@@ -29,6 +29,7 @@ import { fetchVault, type VaultAccount } from "@/lib/solana/vault";
 import { AddressBadge } from "@/app/components/address-badge";
 import { ProgressMetric } from "@/app/components/progress-metric";
 import { StatusDot } from "@/app/components/status-dot";
+import { WalletConnect } from "@/app/components/wallet-connect";
 
 type DashboardState =
   | { kind: "idle" }
@@ -274,13 +275,7 @@ export default function Home() {
             </span>
           </div>
         </div>
-        <button
-          type="button"
-          className="inline-flex items-center gap-2 rounded-lg bg-zinc-900 px-4 py-2.5 text-sm font-semibold text-white  transition hover:bg-zinc-800"
-        >
-          <StopCircle size={16} aria-hidden="true" />
-          PAUSE VAULT
-        </button>
+        <WalletConnect />
       </div>
 
       {/* ── Available Balance Card ── */}
@@ -302,7 +297,7 @@ export default function Home() {
           <div className="flex gap-2">
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-700  transition hover:border-zinc-300 hover:bg-zinc-50"
+              className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
             >
               <ArrowDown size={15} aria-hidden="true" />
               Deposit

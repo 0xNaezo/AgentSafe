@@ -72,7 +72,7 @@ export function AppShell({ children }: AppShellProps) {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 text-white">
             <ShieldCheck size={18} aria-hidden="true" />
           </div>
-          <span className="text-[0.9375rem] font-bold text-zinc-950">
+          <span className="text-lg font-bold text-zinc-950">
             AgentSafe
           </span>
         </div>
@@ -124,13 +124,13 @@ export function AppShell({ children }: AppShellProps) {
 
       {/* Main content area */}
       <div
-        className="flex min-h-screen flex-1 flex-col"
+        className="flex h-screen flex-1 flex-col"
         style={{ marginLeft: "var(--sidebar-width)" }}
       >
 
 
         {/* Page content */}
-        <main className="flex flex-1 flex-col px-8 py-6">{children}</main>
+        <main className="flex flex-1 flex-col overflow-y-auto px-8 py-6 min-h-0">{children}</main>
       </div>
     </div>
   );
