@@ -19,9 +19,10 @@ pub mod anchor_program {
     pub fn initialize(
         ctx: Context<Initialize>,
         daily_limit: u64,
+        hourly_limit: u64,
         onetime_limit: u64,
     ) -> Result<()> {
-        initialize::handler(ctx, daily_limit, onetime_limit)
+        initialize::handler(ctx, daily_limit, hourly_limit, onetime_limit)
     }
 
     pub fn execute_payment(ctx: Context<ExecutePayment>, amount: u64) -> Result<()> {

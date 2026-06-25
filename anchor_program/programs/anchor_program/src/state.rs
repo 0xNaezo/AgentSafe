@@ -8,9 +8,11 @@ pub struct Vault {
     pub vault_bump: u8,
 
     pub daily_limit: u64,
+    pub hourly_limit: u64,
     pub onetime_limit: u64,
 
     pub spent_today: u64,
+    pub spent_hour: u64,
     pub last_reset_time: i64,
 }
 
@@ -21,7 +23,9 @@ impl Vault {
         32 + // token_mint
         1 +  // vault_bump
         8 +  // daily_limit
+        8 +  // hourly_limit
         8 +  // onetime_limit
         8 +  // spent_today
+        8 +  // spent_hour
         8; // last_reset_time
 }

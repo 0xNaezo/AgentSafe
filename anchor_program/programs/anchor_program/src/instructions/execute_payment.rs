@@ -1,4 +1,9 @@
-use crate::{constants::SECONDS_PER_DAY, error::AgentSafeError, state::Vault, VAULT_SEED};
+use crate::{
+    constants::{SECONDS_PER_DAY, SECONDS_PER_HOUR},
+    error::AgentSafeError,
+    state::Vault,
+    VAULT_SEED,
+};
 use anchor_lang::prelude::*;
 use anchor_spl::token_interface::{self, Mint, TokenAccount, TokenInterface, TransferChecked};
 
@@ -47,8 +52,17 @@ pub(crate) fn handler(ctx: Context<ExecutePayment>, amount: u64) -> Result<()> {
         let last_reset_time_d = vault_state.last_reset_time / SECONDS_PER_DAY;
         let time_d = now / SECONDS_PER_DAY;
 
+        let last_reset_time_h = vault_state.last_reset_time / SECONDS_PER_HOUR;
+        let time_h = now / SECONDS_PER_HOUR;
+
         if time_d > last_reset_time_d {
             vault_state.spent_today = 0;
+            vault_state.spent_hour = 0;
+            vault_state.last_reset_time = now;
+        }
+
+        if time_h > last_reset_time_h {
+            vault_state.spent_hour = 0;
             vault_state.last_reset_time = now;
         }
 
@@ -57,16 +71,26 @@ pub(crate) fn handler(ctx: Context<ExecutePayment>, amount: u64) -> Result<()> {
             AgentSafeError::OnetimeLimitExceeded
         );
 
-        let new_spent = amount
+        let new_spent_today = amount
             .checked_add(vault_state.spent_today)
             .ok_or(AgentSafeError::MathOverflow)?;
 
+        let new_spent_hour = amount
+            .checked_add(vault_state.spent_hour)
+            .ok_or(AgentSafeError::MathOverflow)?;
+
         require!(
-            vault_state.daily_limit >= new_spent,
+            vault_state.daily_limit >= new_spent_today,
             AgentSafeError::DailyLimitExceeded
         );
 
-        vault_state.spent_today = new_spent;
+        require!(
+            vault_state.hourly_limit >= new_spent_hour,
+            AgentSafeError::HourlyLimitExceeded
+        );
+
+        vault_state.spent_today = new_spent_today;
+        vault_state.spent_hour = new_spent_hour;
 
         (
             vault_state.owner,
