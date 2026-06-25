@@ -54,10 +54,10 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
             )}
             {message.body && (
               <div
-                className={`${isUser ? "" : "mt-2"} text-sm leading-6 [&_code]:rounded [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-xs [&_pre]:rounded-lg [&_pre]:p-3 ${
+                className={`prose prose-sm max-w-none leading-6 [&_pre]:p-4 [&_code]:rounded-md [&_code]:px-1.5 [&_code]:py-0.5 [&_code]:font-medium [&_pre_code]:bg-transparent [&_pre_code]:p-0 ${
                   isUser
-                    ? "[&_code]:bg-zinc-800 [&_pre]:bg-zinc-800"
-                    : "[&_code]:bg-zinc-100 [&_pre]:bg-zinc-100"
+                    ? "prose-invert [&_pre]:bg-zinc-800 [&_pre]:text-zinc-100 [&_code]:bg-zinc-800 [&_code]:text-zinc-100"
+                    : "prose-zinc mt-2 [&_pre]:bg-zinc-50 [&_pre]:text-zinc-900 [&_pre]:border [&_pre]:border-zinc-200 [&_code]:bg-zinc-100 [&_code]:text-zinc-900"
                 }`}
               >
                 <ReactMarkdown remarkPlugins={[remarkGfm]}>
