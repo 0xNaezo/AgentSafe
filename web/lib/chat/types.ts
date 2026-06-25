@@ -18,9 +18,23 @@ export type ChatExecutionContext = {
   tokenMint: PublicKey;
 };
 
+export type TextContentPart = {
+  type: "text";
+  text: string;
+};
+
+export type ImageContentPart = {
+  type: "image_url";
+  image_url: { url: string };
+};
+
+export type ContentPart = TextContentPart | ImageContentPart;
+
+export type MessageContent = string | ContentPart[] | null;
+
 export type ChatMessage = {
   role: "user" | "assistant" | "tool";
-  content: string | null;
+  content: MessageContent;
   tool_calls?: Array<ToolCall>;
   tool_call_id?: string;
 };

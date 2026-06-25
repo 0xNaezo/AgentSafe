@@ -4,13 +4,34 @@ import {
   chatRequestBodySchema,
   chatRequestMessageSchema,
 } from "@/lib/chat/schemas";
-import type { ChatMessage } from "@/lib/chat/types";
+import type { ChatMessage, MessageContent } from "@/lib/chat/types";
 import { checkAuth } from "./check-auth";
 import { parseExecutionContext } from "./parse-context";
 
 const MAX_MESSAGES = 40;
 const MAX_MESSAGE_CHARS = 4_000;
 const MAX_TOTAL_CHARS = 24_000;
+
+function getTextContentLength(content: MessageContent): number {
+  if (content === null || content === undefined) {
+    return 0;
+  }
+
+  if (typeof content === "string") {
+    return content.length;
+  }
+
+  // For multimodal content arrays, only count text parts
+  let length = 0;
+
+  for (const part of content) {
+    if (part.type === "text") {
+      length += part.text.length;
+    }
+  }
+
+  return length;
+}
 
 type ParseMessagesResult =
   | { ok: true; messages: ChatMessage[] }
@@ -37,7 +58,7 @@ function parseMessages(messagesInput: unknown): ParseMessagesResult {
   let totalChars = 0;
 
   for (const message of messagesResult.data) {
-    const contentLength = message.content?.length ?? 0;
+    const contentLength = getTextContentLength(message.content);
     if (contentLength > MAX_MESSAGE_CHARS) {
       return { ok: false, error: "Message content is too large", status: 413 };
     }
@@ -47,7 +68,7 @@ function parseMessages(messagesInput: unknown): ParseMessagesResult {
       return { ok: false, error: "Messages payload is too large", status: 413 };
     }
 
-    messages.push(message);
+    messages.push(message as ChatMessage);
   }
 
   return { ok: true, messages };

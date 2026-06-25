@@ -15,7 +15,7 @@ const MAX_TOOL_CALL_ITERATIONS = 10;
 function summarizeToolResults(messages: ChatMessage[]) {
   const toolResults = messages
     .filter((message) => message.role === "tool" && message.content)
-    .map((message) => message.content);
+    .map((message) => message.content as string);
 
   if (toolResults.length === 0) {
     return null;

@@ -42,17 +42,30 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
             />
           </div>
         ) : (
-          <div
-            className={`${isUser ? "" : "mt-2"} text-sm leading-6 [&_code]:rounded [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-xs [&_pre]:rounded-lg [&_pre]:p-3 ${
-              isUser
-                ? "[&_code]:bg-zinc-800 [&_pre]:bg-zinc-800"
-                : "[&_code]:bg-zinc-100 [&_pre]:bg-zinc-100"
-            }`}
-          >
-            <ReactMarkdown remarkPlugins={[remarkGfm]}>
-              {message.body}
-            </ReactMarkdown>
-          </div>
+          <>
+            {message.imageDataUrl && (
+              <div className={isUser ? "mb-2" : "mt-2 mb-2"}>
+                <img
+                  src={message.imageDataUrl}
+                  alt="Attached image"
+                  className="max-h-48 max-w-full rounded-lg object-contain"
+                />
+              </div>
+            )}
+            {message.body && (
+              <div
+                className={`${isUser ? "" : "mt-2"} text-sm leading-6 [&_code]:rounded [&_code]:px-1 [&_code]:py-0.5 [&_code]:text-xs [&_pre]:rounded-lg [&_pre]:p-3 ${
+                  isUser
+                    ? "[&_code]:bg-zinc-800 [&_pre]:bg-zinc-800"
+                    : "[&_code]:bg-zinc-100 [&_pre]:bg-zinc-100"
+                }`}
+              >
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {message.body}
+                </ReactMarkdown>
+              </div>
+            )}
+          </>
         )}
       </div>
     </div>

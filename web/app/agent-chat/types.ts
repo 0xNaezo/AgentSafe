@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import type { ContentPart } from "@/lib/chat/types";
 import type { ToolCall } from "@/lib/chat/types";
 
 export type ChatBlink = {
@@ -17,6 +18,7 @@ export type ChatMessage = {
   align: "right" | "left";
   kind: ChatMessageKind;
   blink?: ChatBlink;
+  imageDataUrl?: string;
 };
 
 export type ChatAuth = {
@@ -29,7 +31,7 @@ export type ChatAuth = {
 
 export type HistoryMessage = {
   role: "user" | "assistant" | "tool";
-  content: string | null;
+  content: string | ContentPart[] | null;
   tool_calls?: ToolCall[];
   tool_call_id?: string;
 };

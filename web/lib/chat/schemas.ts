@@ -15,9 +15,30 @@ function publicKeySchema(field: string) {
   });
 }
 
+const MAX_IMAGE_DATA_URL_LENGTH = 7_000_000; // ~5 MB base64
+
+const textContentPartSchema = z.object({
+  type: z.literal("text"),
+  text: z.string(),
+});
+
+const imageContentPartSchema = z.object({
+  type: z.literal("image_url"),
+  image_url: z.object({
+    url: z
+      .string()
+      .max(MAX_IMAGE_DATA_URL_LENGTH, "Image data URL is too large"),
+  }),
+});
+
+const contentPartSchema = z.discriminatedUnion("type", [
+  textContentPartSchema,
+  imageContentPartSchema,
+]);
+
 export const chatRequestMessageSchema = z.object({
   role: z.enum(["user", "assistant"]),
-  content: z.string().nullable(),
+  content: z.union([z.string().nullable(), z.array(contentPartSchema)]),
 });
 
 export const chatRequestBodySchema = z.object({

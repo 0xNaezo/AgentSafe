@@ -246,17 +246,17 @@ export default function Home() {
 
   /* Derive display values from vault state or fall back to mock data */
   const balance =
-    state.kind === "ready" ? state.vaultBalance : "12,480.00";
+    state.kind === "ready" ? state.vaultBalance : "0.00";
 
   const dailyCurrent =
     state.kind === "ready"
       ? Number(formatTokenAmount(state.vault.spentToday, state.mintDecimals))
-      : 1750;
+      : 0;
 
   const dailyMax =
     state.kind === "ready"
       ? Number(formatTokenAmount(state.vault.dailyLimit, state.mintDecimals))
-      : 5000;
+      : 0;
 
   const dailyPercent = dailyMax > 0 ? Math.round((dailyCurrent / dailyMax) * 100) : 0;
 
@@ -324,18 +324,18 @@ export default function Home() {
         />
         <ProgressMetric
           title="Hourly Spending"
-          current={850}
-          max={1000}
+          current={0}
+          max={0}
           barColor="orange"
-          subtitle="Approaching hourly limit"
+          subtitle="0% of hourly limit used"
         />
         <ProgressMetric
           title="Per-Payment Cap"
-          current={500}
-          max={500}
+          current={0}
+          max={0}
           unit="USDC"
           badge="Max"
-          subtitle="Largest transaction today: 120.00 USDC"
+          subtitle="Largest transaction today: 0.00 USDC"
         />
       </div>
 
