@@ -1,6 +1,12 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { PublicKey } from "@solana/web3.js";
+import { DEMO_TOKEN_MINT } from "@/lib/solana/config";
+import { deriveVaultPda, deriveVaultTokenAccountPda } from "@/lib/solana/pda";
+import { useAgentSafeProgram } from "@/lib/solana/program";
+import { fetchVault } from "@/lib/solana/vault";
 import {
   Calendar,
   Check,
@@ -20,15 +26,6 @@ import { PROGRAM_ID } from "@/lib/solana/config";
 
 const PROGRAM_ADDRESS = PROGRAM_ID.toBase58();
 
-const VAULT_PDA = "7xQvRz8KdNbW3mPj9sLtYh2fXcVgQ4RkAe6Uz01nMo8p";
-const VAULT_TOKEN_ACCOUNT =
-  "Eq9TfBnW2sXcLhPj7KdRtYm4VzAg3RkQe8Uo1ZD6NbIx";
-
-const VAULT_OWNER = "5LG3kWmQ7tNbXcPj9sRfYh2VzAgD4RkQe6Uo1ZpM21Nk";
-const ASSIGNED_AGENT = "3Kp9mNt2QrXsWfBnD7yLh4cVz8RpKwMtZ6QaPxAgSf1V";
-
-const TOKEN_MINT = "EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v";
-
 const EXPLORER_BASE = "https://solscan.io/account";
 
 function explorerUrl(address: string) {
@@ -40,6 +37,58 @@ function explorerUrl(address: string) {
 /* ------------------------------------------------------------------ */
 
 export default function VaultMetadataPage() {
+  const { publicKey } = useWallet();
+  const program = useAgentSafeProgram();
+
+  const [agentAddress, setAgentAddress] = useState<string>("-");
+
+  const tokenMint = useMemo(() => {
+    try {
+      const trimmed = DEMO_TOKEN_MINT.trim();
+      return trimmed ? new PublicKey(trimmed) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const addresses = useMemo(() => {
+    if (!publicKey || !tokenMint) return null;
+    const [vaultState] = deriveVaultPda(publicKey, tokenMint);
+    const [vaultTokenAccount] = deriveVaultTokenAccountPda(vaultState);
+    return { vaultState, vaultTokenAccount };
+  }, [publicKey, tokenMint]);
+
+  useEffect(() => {
+    let active = true;
+    async function load() {
+      if (!program || !addresses) {
+        if (active) setAgentAddress("-");
+        return;
+      }
+      try {
+        const vault = await fetchVault(program, addresses.vaultState);
+        if (active) {
+          if (vault) {
+            setAgentAddress(vault.agent.toBase58());
+          } else {
+            setAgentAddress("-");
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        if (active) setAgentAddress("-");
+      }
+    }
+    void load();
+    return () => { active = false; };
+  }, [program, addresses]);
+
+  const vaultPdaStr = addresses?.vaultState.toBase58() || "-";
+  const vaultTokenAccStr = addresses?.vaultTokenAccount.toBase58() || "-";
+  const vaultOwnerStr = publicKey?.toBase58() || "-";
+  const assignedAgentStr = agentAddress;
+  const tokenMintStr = tokenMint?.toBase58() || "-";
+
   return (
     <section className="grid gap-6">
       {/* ── Header ─────────────────────────────────────────────── */}
@@ -52,12 +101,8 @@ export default function VaultMetadataPage() {
           </p>
         </div>
         <div className="flex items-center gap-3">
-          <span className="inline-flex items-center gap-1.5 text-sm font-medium text-zinc-700">
-            <StatusDot color="orange" pulse size="sm" />
-            Devnet
-          </span>
           <a
-            href={explorerUrl(VAULT_PDA)}
+            href={explorerUrl(vaultPdaStr)}
             target="_blank"
             rel="noopener noreferrer"
             className="inline-flex h-9 items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-50 px-3 text-sm font-semibold text-zinc-700  transition hover:border-zinc-300 hover:bg-zinc-50"
@@ -93,12 +138,12 @@ export default function VaultMetadataPage() {
           <AddressRow
             label="Vault PDA"
             description="Program-derived account that holds the policy state."
-            address={VAULT_PDA}
+            address={vaultPdaStr}
           />
           <AddressRow
             label="Vault Token Account"
             description="Associated token account custodying vault USDC."
-            address={VAULT_TOKEN_ACCOUNT}
+            address={vaultTokenAccStr}
           />
         </div>
       </div>
@@ -110,12 +155,12 @@ export default function VaultMetadataPage() {
           <AddressRow
             label="Vault Owner"
             description="Controls configuration, approvals and withdrawals."
-            address={VAULT_OWNER}
+            address={vaultOwnerStr}
           />
           <AddressRow
             label="Assigned Agent"
             description="Only wallet permitted to initiate payment intents."
-            address={ASSIGNED_AGENT}
+            address={assignedAgentStr}
           />
         </div>
       </div>
@@ -127,7 +172,7 @@ export default function VaultMetadataPage() {
           <AddressRow
             label="Token Mint"
             description="USDC mint locked to this vault for the MVP."
-            address={TOKEN_MINT}
+            address={tokenMintStr}
           />
         </div>
       </div>
