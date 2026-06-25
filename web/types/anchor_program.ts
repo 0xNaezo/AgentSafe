@@ -175,6 +175,10 @@ export type AnchorProgram = {
           "type": "u64"
         },
         {
+          "name": "hourlyLimit",
+          "type": "u64"
+        },
+        {
           "name": "onetimeLimit",
           "type": "u64"
         }
@@ -274,16 +278,21 @@ export type AnchorProgram = {
     },
     {
       "code": 6001,
+      "name": "hourlyLimitExceeded",
+      "msg": "The requested amount exceeds the hourly payment limit."
+    },
+    {
+      "code": 6002,
       "name": "onetimeLimitExceeded",
       "msg": "The requested amount exceeds the single payment limit."
     },
     {
-      "code": 6002,
+      "code": 6003,
       "name": "mathOverflow",
       "msg": "A mathematical overflow occurred during calculation."
     },
     {
-      "code": 6003,
+      "code": 6004,
       "name": "invalidLimitsConfiguration",
       "msg": "Daily limit must be greater than or equal to the one-time limit."
     }
@@ -315,11 +324,19 @@ export type AnchorProgram = {
             "type": "u64"
           },
           {
+            "name": "hourlyLimit",
+            "type": "u64"
+          },
+          {
             "name": "onetimeLimit",
             "type": "u64"
           },
           {
             "name": "spentToday",
+            "type": "u64"
+          },
+          {
+            "name": "spentHour",
             "type": "u64"
           },
           {

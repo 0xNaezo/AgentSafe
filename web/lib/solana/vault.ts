@@ -12,14 +12,17 @@ export type VaultAccount = {
   tokenMint: PublicKey;
   vaultBump: number;
   dailyLimit: BN;
+  hourlyLimit: BN;
   onetimeLimit: BN;
   spentToday: BN;
+  spentHour: BN;
   lastResetTime: BN;
 };
 
 export type InitializeVaultInput = {
   agent: PublicKey;
   dailyLimit: BN;
+  hourlyLimit: BN;
   owner: PublicKey;
   onetimeLimit: BN;
   tokenMint: PublicKey;
@@ -41,7 +44,7 @@ export async function initializeVault(
   input: InitializeVaultInput,
 ): Promise<string> {
   return program.methods
-    .initialize(input.dailyLimit, input.onetimeLimit)
+    .initialize(input.dailyLimit, input.hourlyLimit, input.onetimeLimit)
     .accountsStrict({
       owner: input.owner,
       agent: input.agent,

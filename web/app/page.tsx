@@ -259,12 +259,23 @@ export default function Home() {
       ? Number(formatTokenAmount(state.vault.dailyLimit, state.mintDecimals))
       : 0;
 
+  const hourlyCurrent =
+    state.kind === "ready"
+      ? Number(formatTokenAmount(state.vault.spentHour, state.mintDecimals))
+      : 0;
+
+  const hourlyMax =
+    state.kind === "ready"
+      ? Number(formatTokenAmount(state.vault.hourlyLimit, state.mintDecimals))
+      : 0;
+
   const onetimeMax =
     state.kind === "ready"
       ? Number(formatTokenAmount(state.vault.onetimeLimit, state.mintDecimals))
       : 0;
 
   const dailyPercent = dailyMax > 0 ? Math.round((dailyCurrent / dailyMax) * 100) : 0;
+  const hourlyPercent = hourlyMax > 0 ? Math.round((hourlyCurrent / hourlyMax) * 100) : 0;
 
   return (
     <>
@@ -332,10 +343,10 @@ export default function Home() {
         />
         <ProgressMetric
           title="Hourly Spending"
-          current={0}
-          max={0}
+          current={hourlyCurrent}
+          max={hourlyMax}
           barColor="orange"
-          subtitle="0% of hourly limit used"
+          subtitle={`${hourlyPercent}% of hourly limit used`}
         />
         <ProgressMetric
           title="Per-Payment Cap"

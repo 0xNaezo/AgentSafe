@@ -87,6 +87,7 @@ export default function VaultSettingsPage() {
           setAgentAddress(vault.agent.toBase58());
           const mint = await getMint(connection, tokenMint!);
           setDailyLimit(formatTokenAmount(vault.dailyLimit, mint.decimals));
+          setHourlyLimit(formatTokenAmount(vault.hourlyLimit, mint.decimals));
           setPerPaymentCap(formatTokenAmount(vault.onetimeLimit, mint.decimals));
         } else {
           setAgentAddress("-");

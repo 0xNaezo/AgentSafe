@@ -62,6 +62,7 @@ export default function VaultSetupPage() {
   const [agentAddress, setAgentAddress] = useState("");
   const [tokenMintAddress, setTokenMintAddress] = useState(DEMO_TOKEN_MINT);
   const [dailyLimit, setDailyLimit] = useState("900");
+  const [hourlyLimit, setHourlyLimit] = useState("300");
   const [onetimeLimit, setOnetimeLimit] = useState("150");
   const [submitState, setSubmitState] = useState<SubmitState>({ kind: "idle" });
 
@@ -133,14 +134,28 @@ export default function VaultSetupPage() {
 
       const mint = await getMint(connection, tokenMint);
       const dailyLimitUnits = parseTokenAmount(dailyLimit, mint.decimals);
+      const hourlyLimitUnits = parseTokenAmount(hourlyLimit, mint.decimals);
       const onetimeLimitUnits = parseTokenAmount(onetimeLimit, mint.decimals);
 
       if (dailyLimitUnits.toString() === "0") {
         throw new Error("Daily limit must be greater than zero.");
       }
 
+      if (hourlyLimitUnits.toString() === "0") {
+        throw new Error("Hourly limit must be greater than zero.");
+      }
+
       if (onetimeLimitUnits.toString() === "0") {
         throw new Error("One-time limit must be greater than zero.");
+      }
+
+      if (
+        dailyLimitUnits.lt(hourlyLimitUnits) ||
+        hourlyLimitUnits.lt(onetimeLimitUnits)
+      ) {
+        throw new Error(
+          "Limits must satisfy: daily >= hourly >= one-time.",
+        );
       }
 
       setSubmitState({
@@ -151,6 +166,7 @@ export default function VaultSetupPage() {
       const signature = await initializeVault(anchorProgram, {
         agent,
         dailyLimit: dailyLimitUnits,
+        hourlyLimit: hourlyLimitUnits,
         owner: ownerPublicKey,
         onetimeLimit: onetimeLimitUnits,
         tokenMint,
@@ -300,6 +316,11 @@ export default function VaultSetupPage() {
                 label="Daily spending limit"
                 value={dailyLimit}
                 onChange={setDailyLimit}
+              />
+              <LimitField
+                label="Hourly spending limit"
+                value={hourlyLimit}
+                onChange={setHourlyLimit}
               />
               <LimitField
                 label="One-time spending limit"
