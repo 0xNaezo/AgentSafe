@@ -5,6 +5,9 @@ pub enum AgentSafeError {
     #[msg("The requested amount exceeds the daily limit.")]
     DailyLimitExceeded,
 
+    #[msg("The requested amount exceeds the hourly payment limit.")]
+    HourlyLimitExceeded,
+
     #[msg("The requested amount exceeds the single payment limit.")]
     OnetimeLimitExceeded,
 

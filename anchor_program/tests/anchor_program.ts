@@ -27,6 +27,7 @@ type TestVault = {
   vaultTokenAccount: web3.PublicKey;
   recipientTokenAccount: web3.PublicKey;
   dailyLimit: number;
+  hourlyLimit: number;
   onetimeLimit: number;
 };
 
@@ -34,6 +35,7 @@ describe("anchor_program", () => {
   it("initializes a vault and its token account", async () => {
     const ctx = await setupVault({
       dailyLimit: 1_000,
+      hourlyLimit: 1_000,
       onetimeLimit: 500,
       vaultBalance: 1_000,
     });
@@ -44,8 +46,10 @@ describe("anchor_program", () => {
     expect(vault.tokenMint.equals(ctx.mint)).to.equal(true);
     expect(vault.vaultBump).to.equal(ctx.vaultBump);
     expect(vault.dailyLimit.toNumber()).to.equal(1_000);
+    expect(vault.hourlyLimit.toNumber()).to.equal(1_000);
     expect(vault.onetimeLimit.toNumber()).to.equal(500);
     expect(vault.spentToday.toNumber()).to.equal(0);
+    expect(vault.spentHour.toNumber()).to.equal(0);
     expect(vault.lastResetTime.toNumber()).to.be.greaterThan(0);
 
     const tokenAccount = await fetchTokenAccount(ctx.vaultTokenAccount);
@@ -57,6 +61,7 @@ describe("anchor_program", () => {
   it("lets the assigned agent execute a payment", async () => {
     const ctx = await setupVault({
       dailyLimit: 1_000,
+      hourlyLimit: 1_000,
       onetimeLimit: 500,
       vaultBalance: 1_000,
     });
@@ -68,11 +73,13 @@ describe("anchor_program", () => {
 
     const vault = await program.account.vault.fetch(ctx.vaultState);
     expect(vault.spentToday.toNumber()).to.equal(300);
+    expect(vault.spentHour.toNumber()).to.equal(300);
   });
 
   it("lets the owner force transfer from the vault", async () => {
     const ctx = await setupVault({
       dailyLimit: 1_000,
+      hourlyLimit: 1_000,
       onetimeLimit: 500,
       vaultBalance: 1_000,
     });
@@ -86,6 +93,7 @@ describe("anchor_program", () => {
   it("rejects owner force transfers signed by the agent", async () => {
     const ctx = await setupVault({
       dailyLimit: 1_000,
+      hourlyLimit: 1_000,
       onetimeLimit: 500,
       vaultBalance: 1_000,
     });
@@ -102,6 +110,7 @@ describe("anchor_program", () => {
   it("rejects a payment above the one-time limit", async () => {
     const ctx = await setupVault({
       dailyLimit: 1_000,
+      hourlyLimit: 1_000,
       onetimeLimit: 500,
       vaultBalance: 1_000,
     });
@@ -118,9 +127,32 @@ describe("anchor_program", () => {
     expect(vault.spentToday.toNumber()).to.equal(0);
   });
 
+  it("rejects payments that exceed the hourly limit in aggregate", async () => {
+    const ctx = await setupVault({
+      dailyLimit: 2_000,
+      hourlyLimit: 500,
+      onetimeLimit: 400,
+      vaultBalance: 1_000,
+    });
+
+    await executePayment(ctx, 300);
+    await expectAnchorError(executePayment(ctx, 300), [
+      "HourlyLimitExceeded",
+      "hourlyLimitExceeded",
+    ]);
+
+    expect(await tokenBalance(ctx.vaultTokenAccount)).to.equal(700);
+    expect(await tokenBalance(ctx.recipientTokenAccount)).to.equal(300);
+
+    const vault = await program.account.vault.fetch(ctx.vaultState);
+    expect(vault.spentToday.toNumber()).to.equal(300);
+    expect(vault.spentHour.toNumber()).to.equal(300);
+  });
+
   it("rejects payments that exceed the daily limit in aggregate", async () => {
     const ctx = await setupVault({
       dailyLimit: 1_000,
+      hourlyLimit: 1_000,
       onetimeLimit: 700,
       vaultBalance: 1_500,
     });
@@ -136,11 +168,13 @@ describe("anchor_program", () => {
 
     const vault = await program.account.vault.fetch(ctx.vaultState);
     expect(vault.spentToday.toNumber()).to.equal(600);
+    expect(vault.spentHour.toNumber()).to.equal(600);
   });
 
   it("allows payments exactly on the configured limits", async () => {
     const ctx = await setupVault({
       dailyLimit: 1_000,
+      hourlyLimit: 1_000,
       onetimeLimit: 500,
       vaultBalance: 1_000,
     });
@@ -153,11 +187,13 @@ describe("anchor_program", () => {
 
     const vault = await program.account.vault.fetch(ctx.vaultState);
     expect(vault.spentToday.toNumber()).to.equal(1_000);
+    expect(vault.spentHour.toNumber()).to.equal(1_000);
   });
 
   it("rejects payments signed by another agent", async () => {
     const ctx = await setupVault({
       dailyLimit: 1_000,
+      hourlyLimit: 1_000,
       onetimeLimit: 500,
       vaultBalance: 1_000,
     });
@@ -177,6 +213,7 @@ describe("anchor_program", () => {
   it("rejects a substituted token mint", async () => {
     const ctx = await setupVault({
       dailyLimit: 1_000,
+      hourlyLimit: 1_000,
       onetimeLimit: 500,
       vaultBalance: 1_000,
     });
@@ -194,6 +231,7 @@ describe("anchor_program", () => {
   it("rejects a recipient token account for another mint", async () => {
     const ctx = await setupVault({
       dailyLimit: 1_000,
+      hourlyLimit: 1_000,
       onetimeLimit: 500,
       vaultBalance: 1_000,
     });
@@ -215,6 +253,7 @@ describe("anchor_program", () => {
   it("rejects a substituted vault token account", async () => {
     const ctx = await setupVault({
       dailyLimit: 1_000,
+      hourlyLimit: 1_000,
       onetimeLimit: 500,
       vaultBalance: 1_000,
     });
@@ -237,10 +276,12 @@ describe("anchor_program", () => {
 
 async function setupVault({
   dailyLimit,
+  hourlyLimit,
   onetimeLimit,
   vaultBalance,
 }: {
   dailyLimit: number;
+  hourlyLimit: number;
   onetimeLimit: number;
   vaultBalance: number;
 }): Promise<TestVault> {
@@ -259,7 +300,7 @@ async function setupVault({
   );
 
   await program.methods
-    .initialize(new BN(dailyLimit), new BN(onetimeLimit))
+    .initialize(new BN(dailyLimit), new BN(hourlyLimit), new BN(onetimeLimit))
     .accountsPartial({
       owner: owner.publicKey,
       agent: agent.publicKey,
@@ -284,6 +325,7 @@ async function setupVault({
     vaultTokenAccount,
     recipientTokenAccount,
     dailyLimit,
+    hourlyLimit,
     onetimeLimit,
   };
 }

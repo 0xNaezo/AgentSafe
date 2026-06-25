@@ -1,7 +1,7 @@
 use std::{error::Error, io, path::PathBuf};
 
 use anchor_lang::{AccountDeserialize, AccountSerialize};
-use anchor_program::{state::Vault, SECONDS_PER_DAY, VAULT_SEED};
+use anchor_program::{state::Vault, SECONDS_PER_DAY, SECONDS_PER_HOUR, VAULT_SEED};
 use litesvm::{types::TransactionResult, LiteSVM};
 use solana_account::Account;
 use solana_clock::Clock;
@@ -19,7 +19,8 @@ const TOKEN_DECIMALS: u8 = 0;
 const TOKEN_VAULT_SEED: &[u8] = b"token_vault";
 const EXECUTE_PAYMENT_DISCRIMINATOR: [u8; 8] = [86, 4, 7, 7, 120, 139, 232, 139];
 const DAILY_LIMIT_EXCEEDED_CODE: u32 = 6000;
-const MATH_OVERFLOW_CODE: u32 = 6002;
+const HOURLY_LIMIT_EXCEEDED_CODE: u32 = 6001;
+const MATH_OVERFLOW_CODE: u32 = 6003;
 
 type TestResult<T = ()> = Result<T, Box<dyn Error>>;
 
@@ -27,18 +28,25 @@ type TestResult<T = ()> = Result<T, Box<dyn Error>>;
 fn daily_reset_allows_new_day_spend() -> TestResult {
     let mut ctx = TestContext::new(TestSetup {
         daily_limit: 1_000,
+        hourly_limit: 700,
         onetime_limit: 700,
         vault_balance: 2_000,
         spent_today: 0,
+        spent_hour: 0,
         last_reset_time: SECONDS_PER_DAY,
         current_time: SECONDS_PER_DAY,
     })?;
 
     ctx.execute_payment(700)?.assert_success()?;
+
+    assert_eq!(ctx.vault()?.spent_today, 700);
+    assert_eq!(ctx.vault()?.spent_hour, 700);
+
     ctx.set_clock(2 * SECONDS_PER_DAY);
     ctx.execute_payment(700)?.assert_success()?;
 
     assert_eq!(ctx.vault()?.spent_today, 700);
+    assert_eq!(ctx.vault()?.spent_hour, 700);
     assert_eq!(ctx.vault()?.last_reset_time, 2 * SECONDS_PER_DAY);
     assert_eq!(ctx.token_balance(ctx.vault_token_account)?, 600);
     assert_eq!(ctx.token_balance(ctx.recipient_token_account)?, 1_400);
@@ -47,23 +55,92 @@ fn daily_reset_allows_new_day_spend() -> TestResult {
 }
 
 #[test]
+fn hourly_reset_allows_new_hour_spend() -> TestResult {
+    let mut ctx = TestContext::new(TestSetup {
+        daily_limit: 1_000,
+        hourly_limit: 500,
+        onetime_limit: 400,
+        vault_balance: 1_000,
+        spent_today: 0,
+        spent_hour: 0,
+        last_reset_time: SECONDS_PER_DAY,
+        current_time: SECONDS_PER_DAY,
+    })?;
+
+    ctx.execute_payment(400)?.assert_success()?;
+
+    assert_eq!(ctx.vault()?.spent_hour, 400);
+
+    ctx.set_clock(SECONDS_PER_DAY + SECONDS_PER_HOUR);
+    ctx.execute_payment(400)?.assert_success()?;
+
+    assert_eq!(ctx.vault()?.spent_hour, 400);
+    assert_eq!(ctx.vault()?.spent_today, 800);
+    assert_eq!(
+        ctx.vault()?.last_reset_time,
+        SECONDS_PER_DAY + SECONDS_PER_HOUR
+    );
+    assert_eq!(ctx.token_balance(ctx.vault_token_account)?, 200);
+    assert_eq!(ctx.token_balance(ctx.recipient_token_account)?, 800);
+
+    Ok(())
+}
+
+#[test]
+fn same_hour_rejects_exceeding_hourly_limit() -> TestResult {
+    let mut ctx = TestContext::new(TestSetup {
+        daily_limit: 2_000,
+        hourly_limit: 500,
+        onetime_limit: 400,
+        vault_balance: 1_000,
+        spent_today: 0,
+        spent_hour: 0,
+        last_reset_time: SECONDS_PER_DAY,
+        current_time: SECONDS_PER_DAY,
+    })?;
+
+    ctx.execute_payment(300)?.assert_success()?;
+
+    assert_eq!(ctx.vault()?.spent_hour, 300);
+
+    ctx.set_clock(SECONDS_PER_DAY + 100);
+    ctx.execute_payment(300)?
+        .assert_custom_error(HOURLY_LIMIT_EXCEEDED_CODE)?;
+
+    assert_eq!(ctx.vault()?.spent_hour, 300);
+    assert_eq!(ctx.vault()?.spent_today, 300);
+    assert_eq!(ctx.vault()?.last_reset_time, SECONDS_PER_DAY);
+    assert_eq!(ctx.token_balance(ctx.vault_token_account)?, 700);
+    assert_eq!(ctx.token_balance(ctx.recipient_token_account)?, 300);
+
+    Ok(())
+}
+
+#[test]
 fn same_day_does_not_reset_daily_spend() -> TestResult {
     let mut ctx = TestContext::new(TestSetup {
         daily_limit: 1_000,
+        hourly_limit: 1_000,
         onetime_limit: 700,
         vault_balance: 2_000,
         spent_today: 0,
+        spent_hour: 0,
         last_reset_time: SECONDS_PER_DAY,
         current_time: SECONDS_PER_DAY,
     })?;
 
     ctx.execute_payment(600)?.assert_success()?;
+
+    assert_eq!(ctx.vault()?.spent_today, 600);
+    assert_eq!(ctx.vault()?.spent_hour, 600);
+
     ctx.set_clock(SECONDS_PER_DAY + 1_000);
 
     ctx.execute_payment(500)?
         .assert_custom_error(DAILY_LIMIT_EXCEEDED_CODE)?;
 
     assert_eq!(ctx.vault()?.spent_today, 600);
+    assert_eq!(ctx.vault()?.spent_hour, 600);
     assert_eq!(ctx.vault()?.last_reset_time, SECONDS_PER_DAY);
     assert_eq!(ctx.token_balance(ctx.vault_token_account)?, 1_400);
     assert_eq!(ctx.token_balance(ctx.recipient_token_account)?, 600);
@@ -75,9 +152,11 @@ fn same_day_does_not_reset_daily_spend() -> TestResult {
 fn math_overflow_is_rejected() -> TestResult {
     let mut ctx = TestContext::new(TestSetup {
         daily_limit: u64::MAX,
+        hourly_limit: u64::MAX,
         onetime_limit: u64::MAX,
         vault_balance: 10,
         spent_today: u64::MAX,
+        spent_hour: 0,
         last_reset_time: SECONDS_PER_DAY,
         current_time: SECONDS_PER_DAY,
     })?;
@@ -86,6 +165,7 @@ fn math_overflow_is_rejected() -> TestResult {
         .assert_custom_error(MATH_OVERFLOW_CODE)?;
 
     assert_eq!(ctx.vault()?.spent_today, u64::MAX);
+    assert_eq!(ctx.vault()?.spent_hour, 0);
     assert_eq!(ctx.token_balance(ctx.vault_token_account)?, 10);
     assert_eq!(ctx.token_balance(ctx.recipient_token_account)?, 0);
 
@@ -93,12 +173,14 @@ fn math_overflow_is_rejected() -> TestResult {
 }
 
 #[test]
-fn failed_spl_transfer_rolls_back_spent_today() -> TestResult {
+fn failed_spl_transfer_rolls_back_spent_counters() -> TestResult {
     let mut ctx = TestContext::new(TestSetup {
         daily_limit: 1_000,
+        hourly_limit: 1_000,
         onetime_limit: 1_000,
         vault_balance: 100,
         spent_today: 0,
+        spent_hour: 0,
         last_reset_time: SECONDS_PER_DAY,
         current_time: SECONDS_PER_DAY,
     })?;
@@ -106,6 +188,7 @@ fn failed_spl_transfer_rolls_back_spent_today() -> TestResult {
     ctx.execute_payment(200)?.assert_failure()?;
 
     assert_eq!(ctx.vault()?.spent_today, 0);
+    assert_eq!(ctx.vault()?.spent_hour, 0);
     assert_eq!(ctx.token_balance(ctx.vault_token_account)?, 100);
     assert_eq!(ctx.token_balance(ctx.recipient_token_account)?, 0);
 
@@ -115,9 +198,11 @@ fn failed_spl_transfer_rolls_back_spent_today() -> TestResult {
 #[derive(Clone, Copy)]
 struct TestSetup {
     daily_limit: u64,
+    hourly_limit: u64,
     onetime_limit: u64,
     vault_balance: u64,
     spent_today: u64,
+    spent_hour: u64,
     last_reset_time: i64,
     current_time: i64,
 }
@@ -163,8 +248,10 @@ impl TestContext {
             token_mint: mint_key,
             vault_bump,
             daily_limit: setup.daily_limit,
+            hourly_limit: setup.hourly_limit,
             onetime_limit: setup.onetime_limit,
             spent_today: setup.spent_today,
+            spent_hour: setup.spent_hour,
             last_reset_time: setup.last_reset_time,
         };
 
