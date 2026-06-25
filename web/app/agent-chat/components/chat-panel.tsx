@@ -15,10 +15,13 @@ type ChatPanelProps = {
   unlocking: boolean;
   statusLabel: string;
   unlockError: string | null;
+  imagePreview: string | null;
   textareaRef: RefObject<HTMLTextAreaElement | null>;
   onInputChange: (value: string) => void;
   onSend: () => void;
   onUnlock: () => void;
+  onAttachImage: (dataUrl: string) => void;
+  onRemoveImage: () => void;
 };
 
 export function ChatPanel({
@@ -30,10 +33,13 @@ export function ChatPanel({
   unlocking,
   statusLabel,
   unlockError,
+  imagePreview,
   textareaRef,
   onInputChange,
   onSend,
   onUnlock,
+  onAttachImage,
+  onRemoveImage,
 }: ChatPanelProps) {
   return (
     <div className="flex min-h-0 flex-1 flex-col">
@@ -133,9 +139,12 @@ export function ChatPanel({
         <ChatComposer
             input={input}
             loading={loading}
+            imagePreview={imagePreview}
             textareaRef={textareaRef}
             onInputChange={onInputChange}
             onSend={onSend}
+            onAttachImage={onAttachImage}
+            onRemoveImage={onRemoveImage}
           />
         )}
       </div>

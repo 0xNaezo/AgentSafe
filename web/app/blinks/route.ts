@@ -20,6 +20,7 @@ import {
 } from "@solana/spl-token";
 
 const headers = createActionHeaders();
+const TOKEN_DECIMALS = 9;
 
 class BadRequestError extends Error {}
 
@@ -40,12 +41,12 @@ function parsePublicKey(value: unknown, name: string) {
 }
 
 function parseAmount(value: string | null) {
-  if (!value || !/^\d+(\.\d{1,6})?$/.test(value)) {
+  if (!value || !/^\d+(\.\d{1,9})?$/.test(value)) {
     throw new BadRequestError("amount must be a positive USDC value");
   }
 
   const [integer, fraction = ""] = value.split(".");
-  const paddedFraction = fraction.padEnd(6, "0").slice(0, 6);
+  const paddedFraction = fraction.padEnd(TOKEN_DECIMALS, "0").slice(0, TOKEN_DECIMALS);
   const units = new BN(integer + paddedFraction);
 
   if (units.isNeg()) {

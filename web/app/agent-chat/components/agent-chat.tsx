@@ -22,6 +22,7 @@ import type {
   HistoryMessage,
   StoredChatSession,
 } from "../types";
+import type { ContentPart } from "@/lib/chat/types";
 
 type SignMessage = ReturnType<typeof useWallet>["signMessage"];
 
@@ -71,6 +72,7 @@ function AgentChatSession({
   const [unlockError, setUnlockError] = useState<string | null>(null);
   const [isSessionRestored, setIsSessionRestored] = useState(false);
   const [now, setNow] = useState(() => Date.now());
+  const [pendingImage, setPendingImage] = useState<string | null>(null);
   const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   useEffect(() => {
@@ -226,27 +228,51 @@ function AgentChatSession({
   }
 
   async function sendMessage(content: string) {
-    if (!content.trim() || loading) return;
+    if ((!content.trim() && !pendingImage) || loading) return;
 
     if (!isChatUnlocked || !owner || !tokenMint || !chatAuth) {
       setUnlockError("Sign in to unlock the agent before sending a message.");
       return;
     }
 
+    const imageDataUrl = pendingImage;
+
     const userMessage: ChatMessage = {
       author: "User",
       body: content,
       align: "right",
       kind: "user",
+      imageDataUrl: imageDataUrl ?? undefined,
     };
 
     setMessages((prev) => [...prev, userMessage]);
     setInput("");
+    setPendingImage(null);
     setLoading(true);
+
+    // Build multimodal content when an image is attached
+    let historyContent: HistoryMessage["content"];
+
+    if (imageDataUrl) {
+      const parts: ContentPart[] = [];
+
+      if (content.trim()) {
+        parts.push({ type: "text", text: content });
+      }
+
+      parts.push({
+        type: "image_url",
+        image_url: { url: imageDataUrl },
+      });
+
+      historyContent = parts;
+    } else {
+      historyContent = content;
+    }
 
     const updatedHistory: HistoryMessage[] = [
       ...history,
-      { role: "user" as const, content },
+      { role: "user" as const, content: historyContent },
     ];
     setHistory(updatedHistory);
 
@@ -372,10 +398,13 @@ function AgentChatSession({
         unlocking={unlockingChat}
         statusLabel={chatStatusLabel}
         unlockError={unlockError}
+        imagePreview={pendingImage}
         textareaRef={textareaRef}
         onInputChange={setInput}
         onSend={handleSend}
         onUnlock={authorizeChat}
+        onAttachImage={setPendingImage}
+        onRemoveImage={() => setPendingImage(null)}
       />
     </section>
   );
