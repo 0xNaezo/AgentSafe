@@ -29,6 +29,7 @@ import { fetchVault, type VaultAccount } from "@/lib/solana/vault";
 import { AddressBadge } from "@/app/components/address-badge";
 import { ProgressMetric } from "@/app/components/progress-metric";
 import { StatusDot } from "@/app/components/status-dot";
+import { UsdcIcon } from "@/app/components/icons/usdc-icon";
 import { WalletConnect } from "@/app/components/wallet-connect";
 
 type DashboardState =
@@ -283,12 +284,14 @@ export default function Home() {
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
             <p className="text-sm text-zinc-500">Available Balance</p>
-            <div className="mt-2 flex items-baseline gap-2">
+            <div className="mt-2 flex items-center">
               <span className="text-4xl font-bold tracking-tight text-zinc-950">
                 {balance}
               </span>
-              <span className="inline-block h-2 w-2 rounded-full bg-blue-500" />
-              <span className="text-lg font-semibold text-zinc-500">USDC</span>
+              <div className="ml-3 mt-1 flex items-center gap-1.5">
+                <UsdcIcon className="h-6 w-6" />
+                <span className="text-lg font-semibold text-zinc-500">USDC</span>
+              </div>
             </div>
             <p className="mt-1 text-sm text-zinc-400">
               ≈ ${balance} USD
