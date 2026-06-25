@@ -1,6 +1,14 @@
 "use client";
 
-import { useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import { useConnection, useWallet } from "@solana/wallet-adapter-react";
+import { PublicKey } from "@solana/web3.js";
+import { getMint } from "@solana/spl-token";
+import { DEMO_TOKEN_MINT } from "@/lib/solana/config";
+import { deriveVaultPda } from "@/lib/solana/pda";
+import { useAgentSafeProgram } from "@/lib/solana/program";
+import { fetchVault } from "@/lib/solana/vault";
+import { formatTokenAmount } from "@/lib/solana/amounts";
 import {
   Check,
   Copy,
@@ -34,12 +42,66 @@ const INITIAL_WHITELIST: WhitelistEntry[] = [
 /* ─── Page ─── */
 
 export default function VaultSettingsPage() {
+  const { connection } = useConnection();
+  const { publicKey } = useWallet();
+  const program = useAgentSafeProgram();
+
   const [dailyLimit, setDailyLimit] = useState("5,000.00");
   const [hourlyLimit, setHourlyLimit] = useState("1,000.00");
   const [perPaymentCap, setPerPaymentCap] = useState("500.00");
 
+  const [agentAddress, setAgentAddress] = useState<string>("-");
+
   const [whitelist, setWhitelist] = useState<WhitelistEntry[]>(INITIAL_WHITELIST);
   const [newAddress, setNewAddress] = useState("");
+
+  const tokenMint = useMemo(() => {
+    try {
+      const trimmed = DEMO_TOKEN_MINT.trim();
+      return trimmed ? new PublicKey(trimmed) : null;
+    } catch {
+      return null;
+    }
+  }, []);
+
+  const addresses = useMemo(() => {
+    if (!publicKey || !tokenMint) return null;
+    const [vaultState] = deriveVaultPda(publicKey, tokenMint);
+    return { vaultState };
+  }, [publicKey, tokenMint]);
+
+  useEffect(() => {
+    let active = true;
+
+    async function load() {
+      if (!program || !addresses) {
+        if (active) setAgentAddress("-");
+        return;
+      }
+
+      try {
+        const vault = await fetchVault(program, addresses.vaultState);
+        if (!active) return;
+        
+        if (vault) {
+          setAgentAddress(vault.agent.toBase58());
+          const mint = await getMint(connection, tokenMint!);
+          setDailyLimit(formatTokenAmount(vault.dailyLimit, mint.decimals));
+          setPerPaymentCap(formatTokenAmount(vault.onetimeLimit, mint.decimals));
+        } else {
+          setAgentAddress("-");
+        }
+      } catch (err) {
+        console.error(err);
+        if (active) setAgentAddress("-");
+      }
+    }
+    void load();
+
+    return () => { active = false; };
+  }, [program, addresses, connection, tokenMint]);
+
+  const tokenMintStr = tokenMint?.toBase58() || "-";
 
   const addAddress = () => {
     const trimmed = newAddress.trim();
@@ -207,7 +269,7 @@ export default function VaultSettingsPage() {
             />
             <div className="flex flex-col gap-1 min-w-0">
               <span className="truncate font-mono text-sm font-semibold text-zinc-950">
-                3Kp9 ··· mNt2
+                {agentAddress}
               </span>
               <div className="flex items-center gap-1.5">
                 <StatusDot color="green" pulse />
@@ -256,7 +318,7 @@ export default function VaultSettingsPage() {
                 USD Coin
               </span>
               <span className="truncate font-mono text-xs text-zinc-500">
-                EPjF ··· kdd5
+                {tokenMintStr}
               </span>
             </div>
           </div>
