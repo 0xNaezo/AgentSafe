@@ -72,9 +72,7 @@ export function AppShell({ children }: AppShellProps) {
           <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-zinc-900 text-white">
             <ShieldCheck size={18} aria-hidden="true" />
           </div>
-          <span className="text-lg font-bold text-zinc-950">
-            AgentSafe
-          </span>
+          <span className="text-lg font-bold text-zinc-950">AgentSafe</span>
         </div>
 
         {/* Main navigation */}
@@ -127,17 +125,20 @@ export function AppShell({ children }: AppShellProps) {
         className="flex h-screen flex-1 flex-col"
         style={{ marginLeft: "var(--sidebar-width)" }}
       >
-
-
         {/* Page content */}
-        <main className="flex flex-1 flex-col overflow-y-auto px-8 py-6 min-h-0">{children}</main>
+        <main className="flex flex-1 flex-col overflow-y-auto px-8 py-6 min-h-0">
+          {children}
+        </main>
       </div>
     </div>
   );
 }
 
 function getActiveHref(pathname: string): AppRoute {
-  if (pathname.startsWith("/vault-settings") || pathname.startsWith("/vault-setup")) {
+  if (
+    pathname.startsWith("/vault-settings") ||
+    pathname.startsWith("/vault-setup")
+  ) {
     return "/vault-settings";
   }
 

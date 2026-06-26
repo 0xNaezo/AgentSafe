@@ -54,7 +54,8 @@ export default function VaultSettingsPage() {
 
   const [agentAddress, setAgentAddress] = useState<string>("-");
 
-  const [whitelist, setWhitelist] = useState<WhitelistEntry[]>(INITIAL_WHITELIST);
+  const [whitelist, setWhitelist] =
+    useState<WhitelistEntry[]>(INITIAL_WHITELIST);
   const [newAddress, setNewAddress] = useState("");
 
   const tokenMint = useMemo(() => {
@@ -85,13 +86,15 @@ export default function VaultSettingsPage() {
       try {
         const vault = await fetchVault(program, addresses.vaultState);
         if (!active) return;
-        
+
         if (vault) {
           setAgentAddress(vault.agent.toBase58());
           const mint = await getMint(connection, tokenMint!);
           setDailyLimit(formatTokenAmount(vault.dailyLimit, mint.decimals));
           setHourlyLimit(formatTokenAmount(vault.hourlyLimit, mint.decimals));
-          setPerPaymentCap(formatTokenAmount(vault.onetimeLimit, mint.decimals));
+          setPerPaymentCap(
+            formatTokenAmount(vault.onetimeLimit, mint.decimals),
+          );
         } else {
           setAgentAddress("-");
         }
@@ -102,7 +105,9 @@ export default function VaultSettingsPage() {
     }
     void load();
 
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [program, addresses, connection, tokenMint]);
 
   const tokenMintStr = tokenMint?.toBase58() || "-";
@@ -125,23 +130,42 @@ export default function VaultSettingsPage() {
     try {
       setIsUpdating(true);
       const mint = await getMint(connection, tokenMint);
-      
-      const agent = new PublicKey("3Kp9xYbT5Qm8jRv2Wn7fCdHs4LzA6EgPkU1NtBoMmNt2");
 
-      const parsedDaily = parseTokenAmount(dailyLimit.replace(/,/g, ""), mint.decimals);
-      const parsedHourly = parseTokenAmount(hourlyLimit.replace(/,/g, ""), mint.decimals);
-      const parsedOnetime = parseTokenAmount(perPaymentCap.replace(/,/g, ""), mint.decimals);
+      const agent = new PublicKey(
+        "3Kp9xYbT5Qm8jRv2Wn7fCdHs4LzA6EgPkU1NtBoMmNt2",
+      );
 
-      if (!parsedDaily.gt(new BN(0)) || !parsedHourly.gt(new BN(0)) || !parsedOnetime.gt(new BN(0))) {
+      const parsedDaily = parseTokenAmount(
+        dailyLimit.replace(/,/g, ""),
+        mint.decimals,
+      );
+      const parsedHourly = parseTokenAmount(
+        hourlyLimit.replace(/,/g, ""),
+        mint.decimals,
+      );
+      const parsedOnetime = parseTokenAmount(
+        perPaymentCap.replace(/,/g, ""),
+        mint.decimals,
+      );
+
+      if (
+        !parsedDaily.gt(new BN(0)) ||
+        !parsedHourly.gt(new BN(0)) ||
+        !parsedOnetime.gt(new BN(0))
+      ) {
         throw new Error("Limits cannot be zero.");
       }
 
       if (parsedDaily.lte(parsedHourly)) {
-        throw new Error("Daily limit must be strictly greater than the hourly limit.");
+        throw new Error(
+          "Daily limit must be strictly greater than the hourly limit.",
+        );
       }
 
       if (parsedHourly.lte(parsedOnetime)) {
-        throw new Error("Hourly limit must be strictly greater than the per-payment cap.");
+        throw new Error(
+          "Hourly limit must be strictly greater than the per-payment cap.",
+        );
       }
 
       const signature = await initializeVault(program, {
@@ -154,7 +178,7 @@ export default function VaultSettingsPage() {
         vaultState: addresses.vaultState,
         vaultTokenAccount: addresses.vaultTokenAccount,
       });
-      
+
       toast.success(`Success! Signature: ${signature}`);
       setTimeout(() => window.location.reload(), 1500);
     } catch (err) {
@@ -238,8 +262,8 @@ export default function VaultSettingsPage() {
               Recipient Whitelist
             </h2>
             <p className="mt-1 text-sm text-zinc-500">
-              Only these addresses can receive funds. Everything else is rejected
-              on-chain.
+              Only these addresses can receive funds. Everything else is
+              rejected on-chain.
             </p>
           </div>
           <span className="shrink-0 rounded-md border border-zinc-200 bg-zinc-50 px-2 py-1 text-xs font-semibold text-zinc-600">
@@ -386,18 +410,19 @@ export default function VaultSettingsPage() {
               <StopCircle size={18} aria-hidden="true" />
             </div>
             <div>
-              <h2 className="text-sm font-bold text-rose-600">
-                Danger Zone
-              </h2>
+              <h2 className="text-sm font-bold text-rose-600">Danger Zone</h2>
               <p className="mt-1 text-sm font-bold text-zinc-900">
                 Pause Vault
               </p>
               <p className="mt-1 text-sm text-zinc-500">
-                Immediately blocks all AI-initiated operations until you manually resume. Deposits and owner withdrawals remain available.
+                Immediately blocks all AI-initiated operations until you
+                manually resume. Deposits and owner withdrawals remain
+                available.
               </p>
               <p className="mt-4 flex items-center gap-1.5 text-xs text-zinc-400">
                 <SlidersHorizontal size={13} aria-hidden="true" />
-                You&rsquo;ll be asked to confirm: &ldquo;Are you absolutely sure? This blocks all AI operations.&rdquo;
+                You&rsquo;ll be asked to confirm: &ldquo;Are you absolutely
+                sure? This blocks all AI operations.&rdquo;
               </p>
             </div>
           </div>

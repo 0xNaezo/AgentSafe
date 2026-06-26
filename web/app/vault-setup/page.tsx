@@ -153,9 +153,7 @@ export default function VaultSetupPage() {
         dailyLimitUnits.lt(hourlyLimitUnits) ||
         hourlyLimitUnits.lt(onetimeLimitUnits)
       ) {
-        throw new Error(
-          "Limits must satisfy: daily >= hourly >= one-time.",
-        );
+        throw new Error("Limits must satisfy: daily >= hourly >= one-time.");
       }
 
       setSubmitState({

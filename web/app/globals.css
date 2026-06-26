@@ -132,7 +132,9 @@ a {
   font-size: 0.875rem;
   font-weight: 500;
   color: #64748b;
-  transition: background-color 150ms ease, color 150ms ease;
+  transition:
+    background-color 150ms ease,
+    color 150ms ease;
   cursor: pointer;
   text-decoration: none;
 }

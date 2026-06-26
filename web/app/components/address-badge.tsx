@@ -36,17 +36,13 @@ export function AddressBadge({
   };
 
   return (
-    <span
-      className={`inline-flex items-center gap-2 ${className}`}
-    >
+    <span className={`inline-flex items-center gap-2 ${className}`}>
       <span
         className="identicon"
         style={{ background: identiconGradient }}
         aria-hidden="true"
       />
-      {label && (
-        <span className="text-sm text-zinc-500">{label}</span>
-      )}
+      {label && <span className="text-sm text-zinc-500">{label}</span>}
       <span
         className={`text-sm font-medium text-zinc-900 ${mono ? "font-mono" : ""}`}
       >

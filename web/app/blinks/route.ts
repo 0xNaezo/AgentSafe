@@ -46,7 +46,9 @@ function parseAmount(value: string | null) {
   }
 
   const [integer, fraction = ""] = value.split(".");
-  const paddedFraction = fraction.padEnd(TOKEN_DECIMALS, "0").slice(0, TOKEN_DECIMALS);
+  const paddedFraction = fraction
+    .padEnd(TOKEN_DECIMALS, "0")
+    .slice(0, TOKEN_DECIMALS);
   const units = new BN(integer + paddedFraction);
 
   if (units.isNeg()) {

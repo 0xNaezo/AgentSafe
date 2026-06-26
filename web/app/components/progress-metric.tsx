@@ -9,7 +9,10 @@ type ProgressMetricProps = {
   className?: string;
 };
 
-const barColorMap: Record<NonNullable<ProgressMetricProps["barColor"]>, string> = {
+const barColorMap: Record<
+  NonNullable<ProgressMetricProps["barColor"]>,
+  string
+> = {
   blue: "bg-blue-500",
   orange: "bg-amber-500",
   green: "bg-emerald-500",
@@ -58,14 +61,10 @@ export function ProgressMetric({
           {formatNumber(current)}
         </span>
         {max > 0 && !badge && (
-          <span className="text-sm text-zinc-400">
-            / {formatNumber(max)}
-          </span>
+          <span className="text-sm text-zinc-400">/ {formatNumber(max)}</span>
         )}
         {unit && (
-          <span className="ml-1 text-sm font-medium text-zinc-400">
-            {unit}
-          </span>
+          <span className="ml-1 text-sm font-medium text-zinc-400">{unit}</span>
         )}
       </div>
 
@@ -78,9 +77,7 @@ export function ProgressMetric({
         </div>
       )}
 
-      {subtitle && (
-        <p className="mt-2 text-xs text-zinc-400">{subtitle}</p>
-      )}
+      {subtitle && <p className="mt-2 text-xs text-zinc-400">{subtitle}</p>}
     </div>
   );
 }
