@@ -80,7 +80,9 @@ export default function VaultMetadataPage() {
       }
     }
     void load();
-    return () => { active = false; };
+    return () => {
+      active = false;
+    };
   }, [program, addresses]);
 
   const vaultPdaStr = addresses?.vaultState.toBase58() || "-";
@@ -211,7 +213,9 @@ function InfoCard({
       <p className="mt-2 text-xs font-semibold uppercase text-zinc-500">
         {label}
       </p>
-      <p className={`mt-1 text-base font-semibold text-zinc-900 ${valueClassName}`}>
+      <p
+        className={`mt-1 text-base font-semibold text-zinc-900 ${valueClassName}`}
+      >
         {value}
       </p>
     </div>

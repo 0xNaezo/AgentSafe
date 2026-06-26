@@ -19,10 +19,7 @@ import {
   XCircle,
 } from "lucide-react";
 import { formatTokenAmount } from "@/lib/solana/amounts";
-import {
-  DEMO_TOKEN_MINT,
-  PROGRAM_ID_MISMATCH,
-} from "@/lib/solana/config";
+import { DEMO_TOKEN_MINT, PROGRAM_ID_MISMATCH } from "@/lib/solana/config";
 import { deriveVaultPda, deriveVaultTokenAccountPda } from "@/lib/solana/pda";
 import { useAgentSafeProgram } from "@/lib/solana/program";
 import { fetchVault, type VaultAccount } from "@/lib/solana/vault";
@@ -121,15 +118,29 @@ const AUDIT_LOG: AuditEntry[] = [
 function AuditIcon({ type }: { type: AuditEntry["icon"] }) {
   switch (type) {
     case "check":
-      return <CheckCircle2 size={16} className="text-emerald-500" aria-hidden="true" />;
+      return (
+        <CheckCircle2
+          size={16}
+          className="text-emerald-500"
+          aria-hidden="true"
+        />
+      );
     case "warning":
-      return <AlertTriangle size={16} className="text-amber-500" aria-hidden="true" />;
+      return (
+        <AlertTriangle
+          size={16}
+          className="text-amber-500"
+          aria-hidden="true"
+        />
+      );
     case "blocked":
       return <XCircle size={16} className="text-rose-500" aria-hidden="true" />;
   }
 }
 
-function statusDotColor(status: AuditEntry["status"]): "green" | "orange" | "red" {
+function statusDotColor(
+  status: AuditEntry["status"],
+): "green" | "orange" | "red" {
   switch (status) {
     case "Passed":
       return "green";
@@ -168,7 +179,8 @@ export default function Home() {
     if (!tokenMint) {
       setState({
         kind: "error",
-        message: "Set NEXT_PUBLIC_DEMO_TOKEN_MINT to a valid localnet token mint.",
+        message:
+          "Set NEXT_PUBLIC_DEMO_TOKEN_MINT to a valid localnet token mint.",
       });
       return;
     }
@@ -246,8 +258,7 @@ export default function Home() {
   }, [loadVault]);
 
   /* Derive display values from vault state or fall back to mock data */
-  const balance =
-    state.kind === "ready" ? state.vaultBalance : "0.00";
+  const balance = state.kind === "ready" ? state.vaultBalance : "0.00";
 
   const dailyCurrent =
     state.kind === "ready"
@@ -274,8 +285,10 @@ export default function Home() {
       ? Number(formatTokenAmount(state.vault.onetimeLimit, state.mintDecimals))
       : 0;
 
-  const dailyPercent = dailyMax > 0 ? Math.round((dailyCurrent / dailyMax) * 100) : 0;
-  const hourlyPercent = hourlyMax > 0 ? Math.round((hourlyCurrent / hourlyMax) * 100) : 0;
+  const dailyPercent =
+    dailyMax > 0 ? Math.round((dailyCurrent / dailyMax) * 100) : 0;
+  const hourlyPercent =
+    hourlyMax > 0 ? Math.round((hourlyCurrent / hourlyMax) * 100) : 0;
 
   return (
     <>
@@ -306,12 +319,12 @@ export default function Home() {
               </span>
               <div className="ml-3 mt-1 flex items-center gap-1.5">
                 <UsdcIcon className="h-6 w-6" />
-                <span className="text-lg font-semibold text-zinc-500">USDC</span>
+                <span className="text-lg font-semibold text-zinc-500">
+                  USDC
+                </span>
               </div>
             </div>
-            <p className="mt-1 text-sm text-zinc-400">
-              ≈ ${balance} USD
-            </p>
+            <p className="mt-1 text-sm text-zinc-400">≈ ${balance} USD</p>
           </div>
           <div className="flex gap-2">
             <button
@@ -389,10 +402,7 @@ export default function Home() {
             </thead>
             <tbody className="divide-y divide-zinc-50">
               {AUDIT_LOG.map((entry) => (
-                <tr
-                  key={entry.id}
-                  className="transition hover:bg-zinc-50/60"
-                >
+                <tr key={entry.id} className="transition hover:bg-zinc-50/60">
                   <td className="whitespace-nowrap px-6 py-3">
                     <div className="flex items-center gap-2">
                       <AuditIcon type={entry.icon} />
@@ -402,17 +412,12 @@ export default function Home() {
                     </div>
                   </td>
                   <td className="whitespace-nowrap px-6 py-3">
-                    <AddressBadge
-                      address={entry.recipient}
-                      showCopy={false}
-                    />
+                    <AddressBadge address={entry.recipient} showCopy={false} />
                   </td>
                   <td className="whitespace-nowrap px-6 py-3">
                     <span
                       className={`font-medium ${
-                        entry.positive
-                          ? "text-emerald-600"
-                          : "text-zinc-700"
+                        entry.positive ? "text-emerald-600" : "text-zinc-700"
                       }`}
                     >
                       {entry.amount}

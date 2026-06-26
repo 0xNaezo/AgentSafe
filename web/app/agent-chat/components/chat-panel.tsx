@@ -129,7 +129,7 @@ export function ChatPanel({
             </div>
           </div>
         ) : (
-        <ChatComposer
+          <ChatComposer
             input={input}
             loading={loading}
             imagePreview={imagePreview}

@@ -99,7 +99,11 @@ function BlinkShell({ children }: { children: React.ReactNode }) {
   );
 }
 
-function buildBlinkApiUrl(recipient: string, amount: string, tokenMint: string) {
+function buildBlinkApiUrl(
+  recipient: string,
+  amount: string,
+  tokenMint: string,
+) {
   const path = "/blinks";
   const searchParams = new URLSearchParams({
     to: recipient,
