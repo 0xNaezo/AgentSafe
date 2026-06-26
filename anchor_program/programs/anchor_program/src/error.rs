@@ -14,6 +14,6 @@ pub enum AgentSafeError {
     #[msg("A mathematical overflow occurred during calculation.")]
     MathOverflow,
 
-    #[msg("Daily limit must be greater than or equal to the one-time limit.")]
+    #[msg("Limits must satisfy: daily >= hourly >= onetime.")]
     InvalidLimitsConfiguration,
 }

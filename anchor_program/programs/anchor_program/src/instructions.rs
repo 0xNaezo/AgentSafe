@@ -6,3 +6,6 @@ pub use execute_payment::*;
 
 pub mod owner_force_transfer;
 pub use owner_force_transfer::*;
+
+pub mod update_vault;
+pub use update_vault::*;
