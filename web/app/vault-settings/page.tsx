@@ -9,6 +9,7 @@ import { deriveVaultPda, deriveVaultTokenAccountPda } from "@/lib/solana/pda";
 import { useAgentSafeProgram } from "@/lib/solana/program";
 import { fetchVault, initializeVault } from "@/lib/solana/vault";
 import { formatTokenAmount, parseTokenAmount } from "@/lib/solana/amounts";
+import { toast } from "react-hot-toast";
 import {
   Check,
   Copy,
@@ -154,11 +155,11 @@ export default function VaultSettingsPage() {
         vaultTokenAccount: addresses.vaultTokenAccount,
       });
       
-      alert(`Success! Signature: ${signature}`);
-      window.location.reload();
+      toast.success(`Success! Signature: ${signature}`);
+      setTimeout(() => window.location.reload(), 1500);
     } catch (err) {
       console.error(err);
-      alert(`Error: ${err instanceof Error ? err.message : String(err)}`);
+      toast.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
       setIsUpdating(false);
     }
