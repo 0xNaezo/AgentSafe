@@ -48,9 +48,9 @@ export default function VaultSettingsPage() {
   const { publicKey } = useWallet();
   const program = useAgentSafeProgram();
 
-  const [dailyLimit, setDailyLimit] = useState("5,000.00");
-  const [hourlyLimit, setHourlyLimit] = useState("1,000.00");
-  const [perPaymentCap, setPerPaymentCap] = useState("500.00");
+  const [dailyLimit, setDailyLimit] = useState("0");
+  const [hourlyLimit, setHourlyLimit] = useState("0");
+  const [perPaymentCap, setPerPaymentCap] = useState("0");
 
   const [agentAddress, setAgentAddress] = useState<string>("-");
 
