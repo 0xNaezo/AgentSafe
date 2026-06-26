@@ -5,10 +5,10 @@ import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import { getMint } from "@solana/spl-token";
 import { DEMO_TOKEN_MINT } from "@/lib/solana/config";
-import { deriveVaultPda } from "@/lib/solana/pda";
+import { deriveVaultPda, deriveVaultTokenAccountPda } from "@/lib/solana/pda";
 import { useAgentSafeProgram } from "@/lib/solana/program";
-import { fetchVault } from "@/lib/solana/vault";
-import { formatTokenAmount } from "@/lib/solana/amounts";
+import { fetchVault, initializeVault } from "@/lib/solana/vault";
+import { formatTokenAmount, parseTokenAmount } from "@/lib/solana/amounts";
 import {
   Check,
   Copy,
@@ -24,6 +24,7 @@ import {
 } from "@/app/components/address-badge";
 import { StatusDot } from "@/app/components/status-dot";
 import { UsdcIcon } from "@/app/components/icons/usdc-icon";
+import { BN } from "@coral-xyz/anchor";
 
 /* ─── Mock data ─── */
 
@@ -67,7 +68,8 @@ export default function VaultSettingsPage() {
   const addresses = useMemo(() => {
     if (!publicKey || !tokenMint) return null;
     const [vaultState] = deriveVaultPda(publicKey, tokenMint);
-    return { vaultState };
+    const [vaultTokenAccount] = deriveVaultTokenAccountPda(vaultState);
+    return { vaultState, vaultTokenAccount };
   }, [publicKey, tokenMint]);
 
   useEffect(() => {
@@ -115,6 +117,53 @@ export default function VaultSettingsPage() {
     setWhitelist((prev) => prev.filter((_, i) => i !== index));
   };
 
+  const [isUpdating, setIsUpdating] = useState(false);
+
+  const handleUpdate = async () => {
+    if (!program || !addresses || !publicKey || !tokenMint) return;
+    try {
+      setIsUpdating(true);
+      const mint = await getMint(connection, tokenMint);
+      
+      const agent = new PublicKey("3Kp9xYbT5Qm8jRv2Wn7fCdHs4LzA6EgPkU1NtBoMmNt2");
+
+      const parsedDaily = parseTokenAmount(dailyLimit.replace(/,/g, ""), mint.decimals);
+      const parsedHourly = parseTokenAmount(hourlyLimit.replace(/,/g, ""), mint.decimals);
+      const parsedOnetime = parseTokenAmount(perPaymentCap.replace(/,/g, ""), mint.decimals);
+
+      if (!parsedDaily.gt(new BN(0)) || !parsedHourly.gt(new BN(0)) || !parsedOnetime.gt(new BN(0))) {
+        throw new Error("Limits cannot be zero.");
+      }
+
+      if (parsedDaily.lte(parsedHourly)) {
+        throw new Error("Daily limit must be strictly greater than the hourly limit.");
+      }
+
+      if (parsedHourly.lte(parsedOnetime)) {
+        throw new Error("Hourly limit must be strictly greater than the per-payment cap.");
+      }
+
+      const signature = await initializeVault(program, {
+        agent,
+        dailyLimit: parsedDaily,
+        hourlyLimit: parsedHourly,
+        onetimeLimit: parsedOnetime,
+        owner: publicKey,
+        tokenMint,
+        vaultState: addresses.vaultState,
+        vaultTokenAccount: addresses.vaultTokenAccount,
+      });
+      
+      alert(`Success! Signature: ${signature}`);
+      window.location.reload();
+    } catch (err) {
+      console.error(err);
+      alert(`Error: ${err instanceof Error ? err.message : String(err)}`);
+    } finally {
+      setIsUpdating(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       {/* ── Header ── */}
@@ -135,10 +184,12 @@ export default function VaultSettingsPage() {
           </button>
           <button
             type="button"
-            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white  transition hover:bg-zinc-800"
+            onClick={handleUpdate}
+            disabled={isUpdating}
+            className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50"
           >
             <Check size={16} aria-hidden="true" />
-            Update On-Chain
+            {isUpdating ? "Updating..." : "Update On-Chain"}
           </button>
         </div>
       </div>
