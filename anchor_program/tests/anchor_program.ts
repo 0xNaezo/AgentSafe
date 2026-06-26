@@ -100,7 +100,7 @@ describe("anchor_program", () => {
 
     await expectAnchorError(
       ownerForceTransfer(ctx, 100, { owner: ctx.agent.publicKey }, [ctx.agent]),
-      ["ConstraintHasOne"]
+      ["ConstraintHasOne"],
     );
 
     expect(await tokenBalance(ctx.vaultTokenAccount)).to.equal(1_000);
@@ -203,7 +203,7 @@ describe("anchor_program", () => {
 
     await expectAnchorError(
       executePayment(ctx, 100, { agent: wrongAgent.publicKey }, [wrongAgent]),
-      ["ConstraintHasOne"]
+      ["ConstraintHasOne"],
     );
 
     expect(await tokenBalance(ctx.vaultTokenAccount)).to.equal(1_000);
@@ -221,7 +221,7 @@ describe("anchor_program", () => {
 
     await expectAnchorError(
       executePayment(ctx, 100, { tokenMint: otherMint }),
-      ["ConstraintTokenMint", "ConstraintAddress"]
+      ["ConstraintTokenMint", "ConstraintAddress"],
     );
 
     expect(await tokenBalance(ctx.vaultTokenAccount)).to.equal(1_000);
@@ -238,12 +238,12 @@ describe("anchor_program", () => {
     const otherMint = await createMint(provider.publicKey);
     const wrongRecipientAccount = await createTokenAccount(
       otherMint,
-      ctx.recipient.publicKey
+      ctx.recipient.publicKey,
     );
 
     await expectAnchorError(
       executePayment(ctx, 100, { toTokenAccount: wrongRecipientAccount }),
-      ["ConstraintTokenMint"]
+      ["ConstraintTokenMint"],
     );
 
     expect(await tokenBalance(ctx.vaultTokenAccount)).to.equal(1_000);
@@ -259,18 +259,75 @@ describe("anchor_program", () => {
     });
     const wrongVaultTokenAccount = await createTokenAccount(
       ctx.mint,
-      ctx.vaultState
+      ctx.vaultState,
     );
 
     await mintTo(ctx.mint, wrongVaultTokenAccount, 1_000);
 
     await expectAnchorError(
       executePayment(ctx, 100, { vaultTokenAccount: wrongVaultTokenAccount }),
-      ["ConstraintSeeds"]
+      ["ConstraintSeeds"],
     );
 
     expect(await tokenBalance(ctx.vaultTokenAccount)).to.equal(1_000);
     expect(await tokenBalance(ctx.recipientTokenAccount)).to.equal(0);
+  });
+
+  it("updates vault limits successfully", async () => {
+    const ctx = await setupVault({
+      dailyLimit: 1_000,
+      hourlyLimit: 1_000,
+      onetimeLimit: 500,
+      vaultBalance: 0,
+    });
+
+    await updateValue(ctx, 2_000, 1_500, 1_000);
+
+    const vault = await program.account.vault.fetch(ctx.vaultState);
+    expect(vault.dailyLimit.toNumber()).to.equal(2_000);
+    expect(vault.hourlyLimit.toNumber()).to.equal(1_500);
+    expect(vault.onetimeLimit.toNumber()).to.equal(1_000);
+    expect(vault.spentToday.toNumber()).to.equal(0);
+    expect(vault.spentHour.toNumber()).to.equal(0);
+  });
+
+  it("rejects invalid limit configurations", async () => {
+    const ctx = await setupVault({
+      dailyLimit: 1_000,
+      hourlyLimit: 1_000,
+      onetimeLimit: 500,
+      vaultBalance: 0,
+    });
+
+    await expectAnchorError(updateValue(ctx, 500, 1_000, 500), [
+      "InvalidLimitsConfiguration",
+      "invalidLimitsConfiguration",
+    ]);
+
+    await expectAnchorError(updateValue(ctx, 1_000, 500, 600), [
+      "InvalidLimitsConfiguration",
+      "invalidLimitsConfiguration",
+    ]);
+  });
+
+  it("updates limits without resetting spent counters", async () => {
+    const ctx = await setupVault({
+      dailyLimit: 1_000,
+      hourlyLimit: 1_000,
+      onetimeLimit: 500,
+      vaultBalance: 1_000,
+    });
+
+    await executePayment(ctx, 300);
+
+    await updateValue(ctx, 200, 100, 50);
+
+    const vault = await program.account.vault.fetch(ctx.vaultState);
+    expect(vault.dailyLimit.toNumber()).to.equal(200);
+    expect(vault.hourlyLimit.toNumber()).to.equal(100);
+    expect(vault.onetimeLimit.toNumber()).to.equal(50);
+    expect(vault.spentToday.toNumber()).to.equal(300);
+    expect(vault.spentHour.toNumber()).to.equal(300);
   });
 });
 
@@ -296,7 +353,7 @@ async function setupVault({
   const vaultTokenAccount = findVaultTokenAccount(vaultState);
   const recipientTokenAccount = await createTokenAccount(
     mint,
-    recipient.publicKey
+    recipient.publicKey,
   );
 
   await program.methods
@@ -341,7 +398,7 @@ async function executePayment(
     tokenMint: web3.PublicKey;
     tokenProgram: web3.PublicKey;
   }> = {},
-  signers: web3.Signer[] = [ctx.agent]
+  signers: web3.Signer[] = [ctx.agent],
 ): Promise<string> {
   return program.methods
     .executePayment(new BN(amount))
@@ -352,6 +409,27 @@ async function executePayment(
       toTokenAccount: overrides.toTokenAccount ?? ctx.recipientTokenAccount,
       tokenMint: overrides.tokenMint ?? ctx.mint,
       tokenProgram: overrides.tokenProgram ?? TOKEN_PROGRAM_ID,
+    })
+    .signers(signers)
+    .rpc();
+}
+
+async function updateValue(
+  ctx: TestVault,
+  dailyLimit: number,
+  hourlyLimit: number,
+  onetimeLimit: number,
+  overrides: Partial<{
+    owner: web3.PublicKey;
+    vaultState: web3.PublicKey;
+  }> = {},
+  signers: web3.Signer[] = [ctx.owner],
+): Promise<string> {
+  return program.methods
+    .updateValue(new BN(dailyLimit), new BN(hourlyLimit), new BN(onetimeLimit))
+    .accountsStrict({
+      owner: overrides.owner ?? ctx.owner.publicKey,
+      vaultState: overrides.vaultState ?? ctx.vaultState,
     })
     .signers(signers)
     .rpc();
@@ -368,7 +446,7 @@ async function ownerForceTransfer(
     tokenMint: web3.PublicKey;
     tokenProgram: web3.PublicKey;
   }> = {},
-  signers: web3.Signer[] = [ctx.owner]
+  signers: web3.Signer[] = [ctx.owner],
 ): Promise<string> {
   return program.methods
     .ownerForceTransfer(new BN(amount))
@@ -385,12 +463,11 @@ async function ownerForceTransfer(
 }
 
 async function createMint(
-  mintAuthority: web3.PublicKey
+  mintAuthority: web3.PublicKey,
 ): Promise<web3.PublicKey> {
   const mint = web3.Keypair.generate();
-  const lamports = await connection.getMinimumBalanceForRentExemption(
-    MINT_SIZE
-  );
+  const lamports =
+    await connection.getMinimumBalanceForRentExemption(MINT_SIZE);
 
   await sendInstructions(
     [
@@ -403,7 +480,7 @@ async function createMint(
       }),
       initializeMint2Instruction(mint.publicKey, mintAuthority),
     ],
-    [mint]
+    [mint],
   );
 
   return mint.publicKey;
@@ -411,12 +488,11 @@ async function createMint(
 
 async function createTokenAccount(
   mint: web3.PublicKey,
-  owner: web3.PublicKey
+  owner: web3.PublicKey,
 ): Promise<web3.PublicKey> {
   const account = web3.Keypair.generate();
-  const lamports = await connection.getMinimumBalanceForRentExemption(
-    TOKEN_ACCOUNT_SIZE
-  );
+  const lamports =
+    await connection.getMinimumBalanceForRentExemption(TOKEN_ACCOUNT_SIZE);
 
   await sendInstructions(
     [
@@ -429,7 +505,7 @@ async function createTokenAccount(
       }),
       initializeAccount3Instruction(account.publicKey, mint, owner),
     ],
-    [account]
+    [account],
   );
 
   return account.publicKey;
@@ -438,7 +514,7 @@ async function createTokenAccount(
 async function mintTo(
   mint: web3.PublicKey,
   tokenAccount: web3.PublicKey,
-  amount: number
+  amount: number,
 ): Promise<void> {
   await sendInstructions([
     new web3.TransactionInstruction({
@@ -460,24 +536,24 @@ async function fundAccounts(pubkeys: web3.PublicKey[]): Promise<void> {
         fromPubkey: provider.publicKey,
         toPubkey: pubkey,
         lamports: web3.LAMPORTS_PER_SOL,
-      })
-    )
+      }),
+    ),
   );
 }
 
 async function sendInstructions(
   instructions: web3.TransactionInstruction[],
-  signers: web3.Signer[] = []
+  signers: web3.Signer[] = [],
 ): Promise<string> {
   return provider.sendAndConfirm(
     new web3.Transaction().add(...instructions),
-    signers
+    signers,
   );
 }
 
 function initializeMint2Instruction(
   mint: web3.PublicKey,
-  mintAuthority: web3.PublicKey
+  mintAuthority: web3.PublicKey,
 ): web3.TransactionInstruction {
   return new web3.TransactionInstruction({
     programId: TOKEN_PROGRAM_ID,
@@ -493,7 +569,7 @@ function initializeMint2Instruction(
 function initializeAccount3Instruction(
   account: web3.PublicKey,
   mint: web3.PublicKey,
-  owner: web3.PublicKey
+  owner: web3.PublicKey,
 ): web3.TransactionInstruction {
   return new web3.TransactionInstruction({
     programId: TOKEN_PROGRAM_ID,
@@ -507,18 +583,18 @@ function initializeAccount3Instruction(
 
 function findVaultState(
   owner: web3.PublicKey,
-  mint: web3.PublicKey
+  mint: web3.PublicKey,
 ): [web3.PublicKey, number] {
   return web3.PublicKey.findProgramAddressSync(
     [VAULT_SEED, owner.toBuffer(), mint.toBuffer()],
-    program.programId
+    program.programId,
   );
 }
 
 function findVaultTokenAccount(vaultState: web3.PublicKey): web3.PublicKey {
   return web3.PublicKey.findProgramAddressSync(
     [TOKEN_VAULT_SEED, vaultState.toBuffer()],
-    program.programId
+    program.programId,
   )[0];
 }
 
@@ -544,7 +620,7 @@ async function fetchTokenAccount(tokenAccount: web3.PublicKey): Promise<{
 
 async function expectAnchorError(
   promise: Promise<unknown>,
-  expectedCodes: string[]
+  expectedCodes: string[],
 ): Promise<void> {
   try {
     await promise;

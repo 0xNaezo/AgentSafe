@@ -32,4 +32,13 @@ pub mod anchor_program {
     pub fn owner_force_transfer(ctx: Context<OwnerForceTransfer>, amount: u64) -> Result<()> {
         owner_force_transfer::handler(ctx, amount)
     }
+
+    pub fn update_value(
+        ctx: Context<UpdateValue>,
+        daily_limit: u64,
+        hourly_limit: u64,
+        onetime_limit: u64,
+    ) -> Result<()> {
+        update_vault::handler(ctx, daily_limit, hourly_limit, onetime_limit)
+    }
 }

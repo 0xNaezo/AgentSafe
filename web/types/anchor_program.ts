@@ -2,7 +2,7 @@
  * Program IDL in camelCase format in order to be used in JS/TS.
  *
  * Note that this is only a type helper and is not the actual IDL. The original
- * IDL can be found at `web/lib/solana/anchor-program-idl.json`.
+ * IDL can be found at `target/idl/anchor_program.json`.
  */
 export type AnchorProgram = {
   "address": "2AQb8x4MEFmLKtF3QhoFtNvDD7sXFNqaC6rQuuE6CnGi",
@@ -253,6 +253,46 @@ export type AnchorProgram = {
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "updateValue",
+      "discriminator": [
+        180,
+        106,
+        97,
+        193,
+        52,
+        170,
+        46,
+        151
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "vaultState"
+          ]
+        },
+        {
+          "name": "vaultState",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "dailyLimit",
+          "type": "u64"
+        },
+        {
+          "name": "hourlyLimit",
+          "type": "u64"
+        },
+        {
+          "name": "onetimeLimit",
+          "type": "u64"
+        }
+      ]
     }
   ],
   "accounts": [
@@ -294,7 +334,7 @@ export type AnchorProgram = {
     {
       "code": 6004,
       "name": "invalidLimitsConfiguration",
-      "msg": "Daily limit must be greater than or equal to the one-time limit."
+      "msg": "Limits must satisfy: daily >= hourly >= onetime."
     }
   ],
   "types": [
