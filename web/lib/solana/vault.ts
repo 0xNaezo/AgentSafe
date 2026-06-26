@@ -30,6 +30,14 @@ export type InitializeVaultInput = {
   vaultTokenAccount: PublicKey;
 };
 
+export type UpdateVaultInput = {
+  dailyLimit: BN;
+  hourlyLimit: BN;
+  onetimeLimit: BN;
+  owner: PublicKey;
+  vaultState: PublicKey;
+};
+
 export async function fetchVault(
   program: AgentSafeProgram,
   vaultState: PublicKey,
@@ -53,6 +61,19 @@ export async function initializeVault(
       vaultTokenAccount: input.vaultTokenAccount,
       systemProgram: SystemProgram.programId,
       tokenProgram: TOKEN_PROGRAM_ID,
+    })
+    .rpc();
+}
+
+export async function updateVault(
+  program: AgentSafeProgram,
+  input: UpdateVaultInput,
+): Promise<string> {
+  return program.methods
+    .updateValue(input.dailyLimit, input.hourlyLimit, input.onetimeLimit)
+    .accountsStrict({
+      owner: input.owner,
+      vaultState: input.vaultState,
     })
     .rpc();
 }

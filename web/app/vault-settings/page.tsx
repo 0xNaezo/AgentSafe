@@ -4,15 +4,14 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import { PublicKey } from "@solana/web3.js";
 import { getMint } from "@solana/spl-token";
-import { DEMO_TOKEN_MINT } from "@/lib/solana/config";
+import { DEMO_TOKEN_MINT, PROGRAM_ID_MISMATCH } from "@/lib/solana/config";
 import { deriveVaultPda, deriveVaultTokenAccountPda } from "@/lib/solana/pda";
 import { useAgentSafeProgram } from "@/lib/solana/program";
-import { fetchVault, initializeVault } from "@/lib/solana/vault";
+import { fetchVault, initializeVault, updateVault } from "@/lib/solana/vault";
 import { formatTokenAmount, parseTokenAmount } from "@/lib/solana/amounts";
 import { toast } from "react-hot-toast";
 import {
   Check,
-  Copy,
   Lock,
   Plus,
   SlidersHorizontal,
@@ -41,6 +40,10 @@ const INITIAL_WHITELIST: WhitelistEntry[] = [
   { address: "Dd47Vc8kR2Ln6xYg9Bs1mP2k", label: "Hosting" },
 ];
 
+const DEFAULT_AGENT_ADDRESS = "3Kp9xYbT5Qm8jRv2Wn7fCdHs4LzA6EgPkU1NtBoMmNt2";
+
+type VaultLoadState = "idle" | "loading" | "exists" | "missing" | "error";
+
 /* ─── Page ─── */
 
 export default function VaultSettingsPage() {
@@ -53,6 +56,8 @@ export default function VaultSettingsPage() {
   const [perPaymentCap, setPerPaymentCap] = useState("0");
 
   const [agentAddress, setAgentAddress] = useState<string>("-");
+  const [vaultLoadState, setVaultLoadState] =
+    useState<VaultLoadState>("idle");
 
   const [whitelist, setWhitelist] =
     useState<WhitelistEntry[]>(INITIAL_WHITELIST);
@@ -74,16 +79,27 @@ export default function VaultSettingsPage() {
     return { vaultState, vaultTokenAccount };
   }, [publicKey, tokenMint]);
 
+  const resetVaultForm = useCallback(() => {
+    setAgentAddress("-");
+    setDailyLimit("0");
+    setHourlyLimit("0");
+    setPerPaymentCap("0");
+  }, []);
+
   useEffect(() => {
     let active = true;
 
     async function load() {
       if (!program || !addresses) {
-        if (active) setAgentAddress("-");
+        if (active) {
+          setVaultLoadState("idle");
+          resetVaultForm();
+        }
         return;
       }
 
       try {
+        setVaultLoadState("loading");
         const vault = await fetchVault(program, addresses.vaultState);
         if (!active) return;
 
@@ -95,12 +111,17 @@ export default function VaultSettingsPage() {
           setPerPaymentCap(
             formatTokenAmount(vault.onetimeLimit, mint.decimals),
           );
+          setVaultLoadState("exists");
         } else {
-          setAgentAddress("-");
+          resetVaultForm();
+          setVaultLoadState("missing");
         }
       } catch (err) {
         console.error(err);
-        if (active) setAgentAddress("-");
+        if (active) {
+          resetVaultForm();
+          setVaultLoadState("error");
+        }
       }
     }
     void load();
@@ -108,7 +129,7 @@ export default function VaultSettingsPage() {
     return () => {
       active = false;
     };
-  }, [program, addresses, connection, tokenMint]);
+  }, [program, addresses, connection, tokenMint, resetVaultForm]);
 
   const tokenMintStr = tokenMint?.toBase58() || "-";
 
@@ -123,17 +144,37 @@ export default function VaultSettingsPage() {
     setWhitelist((prev) => prev.filter((_, i) => i !== index));
   };
 
-  const [isUpdating, setIsUpdating] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleUpdate = async () => {
+  const canSubmit =
+    Boolean(program) &&
+    Boolean(addresses) &&
+    Boolean(publicKey) &&
+    Boolean(tokenMint) &&
+    !PROGRAM_ID_MISMATCH &&
+    !isSubmitting &&
+    (vaultLoadState === "exists" || vaultLoadState === "missing");
+
+  const submitAction = vaultLoadState === "exists" ? "update" : "create";
+  const submitLabel =
+    submitAction === "update" ? "Update On-Chain" : "Create Vault";
+  const loadingLabel = submitAction === "update" ? "Updating..." : "Creating...";
+
+  const handleSubmit = async () => {
     if (!program || !addresses || !publicKey || !tokenMint) return;
     try {
-      setIsUpdating(true);
+      if (PROGRAM_ID_MISMATCH) {
+        throw new Error("Configured program id does not match the bundled IDL.");
+      }
+
+      if (vaultLoadState !== "exists" && vaultLoadState !== "missing") {
+        throw new Error("Vault status is still loading. Try again in a moment.");
+      }
+
+      setIsSubmitting(true);
       const mint = await getMint(connection, tokenMint);
 
-      const agent = new PublicKey(
-        "3Kp9xYbT5Qm8jRv2Wn7fCdHs4LzA6EgPkU1NtBoMmNt2",
-      );
+      const agent = new PublicKey(DEFAULT_AGENT_ADDRESS);
 
       const parsedDaily = parseTokenAmount(
         dailyLimit.replace(/,/g, ""),
@@ -156,36 +197,42 @@ export default function VaultSettingsPage() {
         throw new Error("Limits cannot be zero.");
       }
 
-      if (parsedDaily.lte(parsedHourly)) {
-        throw new Error(
-          "Daily limit must be strictly greater than the hourly limit.",
-        );
+      if (parsedDaily.lt(parsedHourly) || parsedHourly.lt(parsedOnetime)) {
+        throw new Error("Limits must satisfy: daily >= hourly >= one-time.");
       }
 
-      if (parsedHourly.lte(parsedOnetime)) {
-        throw new Error(
-          "Hourly limit must be strictly greater than the per-payment cap.",
-        );
-      }
+      const signature =
+        vaultLoadState === "exists"
+          ? await updateVault(program, {
+              dailyLimit: parsedDaily,
+              hourlyLimit: parsedHourly,
+              onetimeLimit: parsedOnetime,
+              owner: publicKey,
+              vaultState: addresses.vaultState,
+            })
+          : await initializeVault(program, {
+              agent,
+              dailyLimit: parsedDaily,
+              hourlyLimit: parsedHourly,
+              onetimeLimit: parsedOnetime,
+              owner: publicKey,
+              tokenMint,
+              vaultState: addresses.vaultState,
+              vaultTokenAccount: addresses.vaultTokenAccount,
+            });
 
-      const signature = await initializeVault(program, {
-        agent,
-        dailyLimit: parsedDaily,
-        hourlyLimit: parsedHourly,
-        onetimeLimit: parsedOnetime,
-        owner: publicKey,
-        tokenMint,
-        vaultState: addresses.vaultState,
-        vaultTokenAccount: addresses.vaultTokenAccount,
-      });
-
-      toast.success(`Success! Signature: ${signature}`);
-      setTimeout(() => window.location.reload(), 1500);
+      setVaultLoadState("exists");
+      setAgentAddress((current) =>
+        current === "-" ? agent.toBase58() : current,
+      );
+      toast.success(
+        `Vault ${submitAction === "update" ? "updated" : "created"}: ${signature}`,
+      );
     } catch (err) {
       console.error(err);
       toast.error(`Error: ${err instanceof Error ? err.message : String(err)}`);
     } finally {
-      setIsUpdating(false);
+      setIsSubmitting(false);
     }
   };
 
@@ -209,21 +256,24 @@ export default function VaultSettingsPage() {
           </button>
           <button
             type="button"
-            onClick={handleUpdate}
-            disabled={isUpdating}
+            onClick={handleSubmit}
+            disabled={!canSubmit}
             className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50"
           >
             <Check size={16} aria-hidden="true" />
-            {isUpdating ? "Updating..." : "Update On-Chain"}
+            {isSubmitting ? loadingLabel : submitLabel}
           </button>
         </div>
       </div>
 
       {/* ── Spending Limits ── */}
       <div className="rounded-lg border border-zinc-200 bg-zinc-50 p-5 ">
-        <h2 className="text-base font-semibold text-zinc-950">
-          Spending Limits
-        </h2>
+        <div className="flex flex-wrap items-start justify-between gap-3">
+          <h2 className="text-base font-semibold text-zinc-950">
+            Spending Limits
+          </h2>
+          <VaultStatusBadge state={vaultLoadState} />
+        </div>
         <p className="mt-1 text-sm text-zinc-500">
           All limits are denominated in USDC and enforced by the on-chain
           program — the UI only previews them.
@@ -477,5 +527,31 @@ function LimitField({
         {description}
       </p>
     </div>
+  );
+}
+
+function VaultStatusBadge({ state }: { state: VaultLoadState }) {
+  const copyByState: Record<VaultLoadState, string> = {
+    idle: "Connect wallet",
+    loading: "Checking vault",
+    exists: "Vault found",
+    missing: "No vault yet",
+    error: "Check failed",
+  };
+
+  const classByState: Record<VaultLoadState, string> = {
+    idle: "border-zinc-200 bg-zinc-100 text-zinc-600",
+    loading: "border-sky-100 bg-sky-50 text-sky-700",
+    exists: "border-emerald-100 bg-emerald-50 text-emerald-700",
+    missing: "border-amber-100 bg-amber-50 text-amber-700",
+    error: "border-rose-100 bg-rose-50 text-rose-700",
+  };
+
+  return (
+    <span
+      className={`inline-flex shrink-0 items-center rounded-md border px-2 py-1 text-xs font-semibold ${classByState[state]}`}
+    >
+      {copyByState[state]}
+    </span>
   );
 }
