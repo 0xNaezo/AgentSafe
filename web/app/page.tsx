@@ -187,7 +187,7 @@ export default function Home() {
     }
 
     if (!program || !addresses) {
-      setState({ kind: "loading" });
+      setState({ kind: "idle" });
       return;
     }
 
