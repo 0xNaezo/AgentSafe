@@ -9,12 +9,23 @@
   "instructions": [
     {
       "name": "execute_payment",
-      "discriminator": [86, 4, 7, 7, 120, 139, 232, 139],
+      "discriminator": [
+        86,
+        4,
+        7,
+        7,
+        120,
+        139,
+        232,
+        139
+      ],
       "accounts": [
         {
           "name": "agent",
           "signer": true,
-          "relations": ["vault_state"]
+          "relations": [
+            "vault_state"
+          ]
         },
         {
           "name": "vault_state",
@@ -27,7 +38,19 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [116, 111, 107, 101, 110, 95, 118, 97, 117, 108, 116]
+                "value": [
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
               },
               {
                 "kind": "account",
@@ -56,7 +79,16 @@
     },
     {
       "name": "initialize",
-      "discriminator": [175, 175, 109, 31, 13, 152, 155, 237],
+      "discriminator": [
+        175,
+        175,
+        109,
+        31,
+        13,
+        152,
+        155,
+        237
+      ],
       "accounts": [
         {
           "name": "owner",
@@ -76,7 +108,13 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [118, 97, 117, 108, 116]
+                "value": [
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
               },
               {
                 "kind": "account",
@@ -96,7 +134,19 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [116, 111, 107, 101, 110, 95, 118, 97, 117, 108, 116]
+                "value": [
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
               },
               {
                 "kind": "account",
@@ -130,12 +180,23 @@
     },
     {
       "name": "owner_force_transfer",
-      "discriminator": [88, 74, 91, 215, 186, 178, 107, 0],
+      "discriminator": [
+        88,
+        74,
+        91,
+        215,
+        186,
+        178,
+        107,
+        0
+      ],
       "accounts": [
         {
           "name": "owner",
           "signer": true,
-          "relations": ["vault_state"]
+          "relations": [
+            "vault_state"
+          ]
         },
         {
           "name": "vault_state",
@@ -148,7 +209,19 @@
             "seeds": [
               {
                 "kind": "const",
-                "value": [116, 111, 107, 101, 110, 95, 118, 97, 117, 108, 116]
+                "value": [
+                  116,
+                  111,
+                  107,
+                  101,
+                  110,
+                  95,
+                  118,
+                  97,
+                  117,
+                  108,
+                  116
+                ]
               },
               {
                 "kind": "account",
@@ -174,12 +247,61 @@
           "type": "u64"
         }
       ]
+    },
+    {
+      "name": "update_value",
+      "discriminator": [
+        180,
+        106,
+        97,
+        193,
+        52,
+        170,
+        46,
+        151
+      ],
+      "accounts": [
+        {
+          "name": "owner",
+          "signer": true,
+          "relations": [
+            "vault_state"
+          ]
+        },
+        {
+          "name": "vault_state",
+          "writable": true
+        }
+      ],
+      "args": [
+        {
+          "name": "daily_limit",
+          "type": "u64"
+        },
+        {
+          "name": "hourly_limit",
+          "type": "u64"
+        },
+        {
+          "name": "onetime_limit",
+          "type": "u64"
+        }
+      ]
     }
   ],
   "accounts": [
     {
       "name": "Vault",
-      "discriminator": [211, 8, 232, 43, 2, 152, 117, 119]
+      "discriminator": [
+        211,
+        8,
+        232,
+        43,
+        2,
+        152,
+        117,
+        119
+      ]
     }
   ],
   "errors": [
@@ -206,7 +328,7 @@
     {
       "code": 6004,
       "name": "InvalidLimitsConfiguration",
-      "msg": "Daily limit must be greater than or equal to the one-time limit."
+      "msg": "Limits must satisfy: daily >= hourly >= onetime."
     }
   ],
   "types": [
