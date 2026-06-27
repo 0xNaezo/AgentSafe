@@ -22,6 +22,7 @@ import { formatTokenAmount } from "@/lib/solana/amounts";
 import { DEMO_TOKEN_MINT, PROGRAM_ID_MISMATCH } from "@/lib/solana/config";
 import { deriveVaultPda, deriveVaultTokenAccountPda } from "@/lib/solana/pda";
 import { useAgentSafeProgram } from "@/lib/solana/program";
+import { getEffectiveSpent } from "@/lib/solana/spending-window";
 import { fetchVault, type VaultAccount } from "@/lib/solana/vault";
 import { AddressBadge } from "@/app/components/address-badge";
 import { ProgressMetric } from "@/app/components/progress-metric";
@@ -260,7 +261,7 @@ export default function Home() {
   /* Derive display values from vault state or fall back to mock data */
   const balance = state.kind === "ready" ? state.vaultBalance : "0.00";
 
-  const dailyCurrent =
+  const rawDailyCurrent =
     state.kind === "ready"
       ? Number(formatTokenAmount(state.vault.spentToday, state.mintDecimals))
       : 0;
@@ -270,7 +271,7 @@ export default function Home() {
       ? Number(formatTokenAmount(state.vault.dailyLimit, state.mintDecimals))
       : 0;
 
-  const hourlyCurrent =
+  const rawHourlyCurrent =
     state.kind === "ready"
       ? Number(formatTokenAmount(state.vault.spentHour, state.mintDecimals))
       : 0;
@@ -284,6 +285,16 @@ export default function Home() {
     state.kind === "ready"
       ? Number(formatTokenAmount(state.vault.onetimeLimit, state.mintDecimals))
       : 0;
+
+  /* Apply client-side window reset to mirror on-chain lazy logic */
+  const { effectiveDaily: dailyCurrent, effectiveHourly: hourlyCurrent } =
+    state.kind === "ready"
+      ? getEffectiveSpent(
+          rawDailyCurrent,
+          rawHourlyCurrent,
+          state.vault.lastResetTime.toNumber(),
+        )
+      : { effectiveDaily: 0, effectiveHourly: 0 };
 
   const dailyPercent =
     dailyMax > 0 ? Math.round((dailyCurrent / dailyMax) * 100) : 0;
