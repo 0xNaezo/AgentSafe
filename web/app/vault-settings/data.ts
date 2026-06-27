@@ -1,7 +1,7 @@
 import type { WhitelistEntry } from "./types";
 
 export const DEFAULT_AGENT_ADDRESS =
-  "3Kp9xYbT5Qm8jRv2Wn7fCdHs4LzA6EgPkU1NtBoMmNt2";
+  process.env.NEXT_PUBLIC_AGENT_ADDRESS ?? "";
 
 export const INITIAL_WHITELIST: WhitelistEntry[] = [
   { address: "8wQrLk5M9Fp2xJv3nHdT4kLm", label: "Anna - Design" },
