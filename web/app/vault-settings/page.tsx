@@ -148,6 +148,9 @@ export default function VaultSettingsPage() {
       setIsSubmitting(true);
       const mint = await getMint(connection, tokenMint);
 
+      if (!DEFAULT_AGENT_ADDRESS) {
+        throw new Error("NEXT_PUBLIC_AGENT_ADDRESS is not set in .env.local");
+      }
       const agent = new PublicKey(DEFAULT_AGENT_ADDRESS);
 
       const parsedDaily = parseTokenAmount(
