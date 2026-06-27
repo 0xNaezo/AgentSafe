@@ -1,7 +1,7 @@
 import { chatTools } from "./tools";
 import type { ChatMessage, OpenRouterChoice, OpenRouterResult } from "./types";
 
-const OPENROUTER_MODEL = "qwen/qwen3.5-flash-02-23";
+const OPENROUTER_MODEL = "qwen/qwen3.6-flash";
 const DEFAULT_OPENROUTER_TIMEOUT_MS = 30_000;
 
 function getOpenRouterTimeoutMs() {
