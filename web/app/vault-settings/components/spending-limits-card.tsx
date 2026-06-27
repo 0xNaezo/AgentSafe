@@ -39,21 +39,18 @@ export function SpendingLimitsCard({
           label="Daily limit"
           value={dailyLimit}
           onChange={onDailyLimitChange}
-          subtext="~ $5,000.00"
           description="Resets every 24h"
         />
         <LimitField
           label="Hourly limit"
           value={hourlyLimit}
           onChange={onHourlyLimitChange}
-          subtext="~ $1,000.00"
           description="Rolling 60 min window"
         />
         <LimitField
           label="Per-payment cap"
           value={perPaymentCap}
           onChange={onPerPaymentCapChange}
-          subtext="~ $500.00"
           description="Above this amount, owner must approve manually"
         />
       </div>
@@ -65,13 +62,11 @@ function LimitField({
   label,
   value,
   onChange,
-  subtext,
   description,
 }: {
   label: string;
   value: string;
   onChange: (value: string) => void;
-  subtext: string;
   description: string;
 }) {
   return (
@@ -92,8 +87,6 @@ function LimitField({
         </span>
       </div>
       <p className="mt-1.5 text-xs text-zinc-500">
-        {subtext && <span className="font-mono">{subtext}</span>}
-        {subtext && description && <span> - </span>}
         {description}
       </p>
     </div>
