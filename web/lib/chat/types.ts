@@ -1,4 +1,5 @@
 import type { PublicKey } from "@solana/web3.js";
+import type { AuditLogEntry } from "@/lib/audit-log";
 
 export type ToolCallResult = {
   name: string;
@@ -67,5 +68,6 @@ export type ChatCompletionResult = {
   reply: string;
   toolCalls: ToolCallResult[];
   approvalRequests: OwnerApprovalRequest[];
+  auditEvents: AuditLogEntry[];
   messages: ChatMessage[];
 };

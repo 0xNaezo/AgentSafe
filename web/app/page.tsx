@@ -13,17 +13,14 @@ import {
   TokenAccountNotFoundError,
 } from "@solana/spl-token";
 import { PublicKey, Transaction } from "@solana/web3.js";
-import {
-  AlertTriangle,
-  ArrowDown,
-  ArrowRight,
-  ArrowUp,
-  CheckCircle2,
-  Gift,
-  X,
-  XCircle,
-} from "lucide-react";
+import { ArrowDown, ArrowRight, ArrowUp, Gift, X } from "lucide-react";
 import { toast } from "react-hot-toast";
+import {
+  appendAuditLog,
+  createAuditLogEntryId,
+  readAuditLog,
+  type AuditLogEntry,
+} from "@/lib/audit-log";
 import { formatTokenAmount, parseTokenAmount } from "@/lib/solana/amounts";
 import { DEMO_TOKEN_MINT, PROGRAM_ID_MISMATCH } from "@/lib/solana/config";
 import { deriveVaultPda, deriveVaultTokenAccountPda } from "@/lib/solana/pda";
@@ -34,7 +31,7 @@ import {
   ownerForceTransfer,
   type VaultAccount,
 } from "@/lib/solana/vault";
-import { AddressBadge } from "@/app/components/address-badge";
+import { AuditLogTable } from "@/app/components/audit-log-table";
 import { ProgressMetric } from "@/app/components/progress-metric";
 import { StatusDot } from "@/app/components/status-dot";
 import { UsdcIcon } from "@/app/components/icons/usdc-icon";
@@ -52,17 +49,6 @@ type DashboardState =
     }
   | { kind: "error"; message: string };
 
-type AuditEntry = {
-  id: number;
-  icon: "check" | "warning" | "blocked";
-  event: string;
-  recipient: string;
-  amount: string;
-  positive: boolean;
-  time: string;
-  status: "Passed" | "Pending" | "Blocked";
-};
-
 type TokenAction = "deposit" | "withdraw";
 
 type ActionStatus =
@@ -71,104 +57,7 @@ type ActionStatus =
   | { kind: "success"; signature: string }
   | { kind: "error"; message: string };
 
-const AUDIT_LOG: AuditEntry[] = [
-  {
-    id: 1,
-    icon: "check",
-    event: "Auto-payment executed",
-    recipient: "8wQr...4kLm",
-    amount: "-50.00 USDC",
-    positive: false,
-    time: "2m ago",
-    status: "Passed",
-  },
-  {
-    id: 2,
-    icon: "warning",
-    event: "Manual approval required",
-    recipient: "Bn2X...9pQz",
-    amount: "-1,200.00 USDC",
-    positive: false,
-    time: "8m ago",
-    status: "Pending",
-  },
-  {
-    id: 3,
-    icon: "blocked",
-    event: "Recipient not whitelisted",
-    recipient: "Xx91...0wZZ",
-    amount: "-4,800.00 USDC",
-    positive: false,
-    time: "15m ago",
-    status: "Blocked",
-  },
-  {
-    id: 4,
-    icon: "check",
-    event: "Deposit received",
-    recipient: "Vault...Self",
-    amount: "+5,000.00 USDC",
-    positive: true,
-    time: "3h ago",
-    status: "Passed",
-  },
-  {
-    id: 5,
-    icon: "blocked",
-    event: "Per-payment limit exceeded",
-    recipient: "Dd47...mP2k",
-    amount: "-900.00 USDC",
-    positive: false,
-    time: "5h ago",
-    status: "Blocked",
-  },
-  {
-    id: 6,
-    icon: "check",
-    event: "Auto-payment executed",
-    recipient: "8wQr...4kLm",
-    amount: "-25.00 USDC",
-    positive: false,
-    time: "6h ago",
-    status: "Passed",
-  },
-];
-
-function AuditIcon({ type }: { type: AuditEntry["icon"] }) {
-  switch (type) {
-    case "check":
-      return (
-        <CheckCircle2
-          size={16}
-          className="text-emerald-500"
-          aria-hidden="true"
-        />
-      );
-    case "warning":
-      return (
-        <AlertTriangle
-          size={16}
-          className="text-amber-500"
-          aria-hidden="true"
-        />
-      );
-    case "blocked":
-      return <XCircle size={16} className="text-rose-500" aria-hidden="true" />;
-  }
-}
-
-function statusDotColor(
-  status: AuditEntry["status"],
-): "green" | "orange" | "red" {
-  switch (status) {
-    case "Passed":
-      return "green";
-    case "Pending":
-      return "orange";
-    case "Blocked":
-      return "red";
-  }
-}
+const DASHBOARD_AUDIT_LOG_LIMIT = 6;
 
 export default function Home() {
   const { connection } = useConnection();
@@ -181,6 +70,7 @@ export default function Home() {
     kind: "idle",
   });
   const [isRequestingTestTokens, setIsRequestingTestTokens] = useState(false);
+  const [auditLog, setAuditLog] = useState<AuditLogEntry[]>([]);
 
   const tokenMint = useMemo(() => parsePublicKeyOrNull(DEMO_TOKEN_MINT), []);
 
@@ -282,16 +172,42 @@ export default function Home() {
     return () => window.clearTimeout(timeoutId);
   }, [loadVault]);
 
+  useEffect(() => {
+    let cancelled = false;
+
+    if (!publicKey || !tokenMint) {
+      window.queueMicrotask(() => {
+        if (!cancelled) {
+          setAuditLog([]);
+        }
+      });
+      return;
+    }
+
+    const owner = publicKey.toBase58();
+    const tokenMintAddress = tokenMint.toBase58();
+
+    window.queueMicrotask(() => {
+      if (!cancelled) {
+        setAuditLog(readAuditLog(owner, tokenMintAddress));
+      }
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [publicKey, tokenMint]);
+
   const canUseVaultActions =
     state.kind === "ready" &&
     Boolean(publicKey) &&
     Boolean(program) &&
     Boolean(addresses) &&
-    Boolean(addresses?.vaultTokenAccount) &&
     Boolean(tokenMint) &&
     !PROGRAM_ID_MISMATCH;
 
   const isActionLoading = actionStatus.kind === "loading";
+  const auditPreview = auditLog.slice(0, DASHBOARD_AUDIT_LOG_LIMIT);
 
   function openAction(action: TokenAction) {
     setActiveAction(action);
@@ -386,6 +302,33 @@ export default function Home() {
         });
       }
 
+      const owner = publicKey.toBase58();
+      const tokenMintAddress = tokenMint.toBase58();
+      const auditEntry: AuditLogEntry = {
+        id: createAuditLogEntryId(),
+        createdAt: Date.now(),
+        source: "dashboard",
+        event:
+          activeAction === "deposit"
+            ? "Deposit confirmed"
+            : "Withdraw confirmed",
+        status: "Passed",
+        owner,
+        tokenMint: tokenMintAddress,
+        recipient:
+          activeAction === "deposit"
+            ? addresses.vaultTokenAccount.toBase58()
+            : owner,
+        amount: `${activeAction === "deposit" ? "+" : "-"}${formatTokenAmount(
+          parsedAmount,
+          state.mintDecimals,
+        )} USDC`,
+        signature,
+        vaultState: addresses.vaultState.toBase58(),
+        vaultTokenAccount: addresses.vaultTokenAccount.toBase58(),
+      };
+
+      setAuditLog(appendAuditLog(auditEntry));
       setActionStatus({ kind: "success", signature });
       toast.success(
         `${activeAction === "deposit" ? "Deposit" : "Withdraw"} confirmed`,
@@ -430,7 +373,6 @@ export default function Home() {
     }
   }
 
-  /* Derive display values from vault state or fall back to mock data */
   const balance = state.kind === "ready" ? state.vaultBalance : "0.00";
 
   const rawDailyCurrent =
@@ -458,7 +400,6 @@ export default function Home() {
       ? Number(formatTokenAmount(state.vault.onetimeLimit, state.mintDecimals))
       : 0;
 
-  /* Apply client-side window reset to mirror on-chain lazy logic */
   const { effectiveDaily: dailyCurrent, effectiveHourly: hourlyCurrent } =
     state.kind === "ready"
       ? getEffectiveSpent(
@@ -475,7 +416,6 @@ export default function Home() {
 
   return (
     <>
-      {/* ── Page Header ── */}
       <div className="flex flex-wrap items-start justify-between gap-4">
         <div>
           <h1 className="text-3xl font-bold text-zinc-950">Vault Overview</h1>
@@ -491,7 +431,6 @@ export default function Home() {
         <WalletConnect />
       </div>
 
-      {/* ── Available Balance Card ── */}
       <div className="mt-6 rounded-xl border border-zinc-200 bg-zinc-50 p-6">
         <div className="flex flex-wrap items-center justify-between gap-4">
           <div>
@@ -541,7 +480,6 @@ export default function Home() {
         </div>
       </div>
 
-      {/* ── Metric Cards ── */}
       <div className="mt-4 grid grid-cols-1 gap-4 sm:grid-cols-3">
         <ProgressMetric
           title="Daily Spending"
@@ -567,7 +505,6 @@ export default function Home() {
         />
       </div>
 
-      {/* ── Audit Log ── */}
       <div className="mt-6 rounded-xl border border-zinc-200 bg-zinc-50">
         <div className="flex items-center justify-between border-b border-zinc-100 px-6 py-4">
           <div className="flex items-center gap-3">
@@ -586,61 +523,7 @@ export default function Home() {
           </Link>
         </div>
 
-        <div className="overflow-x-auto">
-          <table className="audit-log-table w-full text-sm">
-            <thead>
-              <tr className="border-b border-zinc-100 text-left text-xs font-medium uppercase tracking-wider text-zinc-400">
-                <th className="px-6 py-3">Event</th>
-                <th className="px-6 py-3">Recipient</th>
-                <th className="px-6 py-3">Amount</th>
-                <th className="px-6 py-3 text-right">Time &amp; Status</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-zinc-50">
-              {AUDIT_LOG.map((entry) => (
-                <tr key={entry.id} className="transition hover:bg-zinc-50/60">
-                  <td className="whitespace-nowrap px-6 py-3">
-                    <div className="flex items-center gap-2">
-                      <AuditIcon type={entry.icon} />
-                      <span className="font-medium text-zinc-700">
-                        {entry.event}
-                      </span>
-                    </div>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-3">
-                    <AddressBadge address={entry.recipient} showCopy={false} />
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-3">
-                    <span
-                      className={`font-medium ${
-                        entry.positive ? "text-emerald-600" : "text-zinc-700"
-                      }`}
-                    >
-                      {entry.amount}
-                    </span>
-                  </td>
-                  <td className="whitespace-nowrap px-6 py-3 text-right">
-                    <div className="flex items-center justify-end gap-2">
-                      <span className="text-zinc-400">{entry.time}</span>
-                      <StatusDot color={statusDotColor(entry.status)} />
-                      <span
-                        className={`text-xs font-semibold ${
-                          entry.status === "Passed"
-                            ? "text-emerald-600"
-                            : entry.status === "Pending"
-                              ? "text-amber-600"
-                              : "text-rose-600"
-                        }`}
-                      >
-                        {entry.status}
-                      </span>
-                    </div>
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <AuditLogTable entries={auditPreview} />
       </div>
 
       {activeAction ? (

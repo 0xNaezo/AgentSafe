@@ -1,4 +1,5 @@
 import type { LucideIcon } from "lucide-react";
+import type { AuditLogEntry } from "@/lib/audit-log";
 import type { MessageContent, ToolCall } from "@/lib/chat/types";
 
 export type ChatBlink = {
@@ -63,6 +64,7 @@ export type ChatResponse = {
     args: Record<string, unknown>;
   }>;
   approvalRequests?: ChatBlink[];
+  auditEvents?: AuditLogEntry[];
 };
 
 export type IntentField = {
