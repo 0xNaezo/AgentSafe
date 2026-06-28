@@ -9,6 +9,11 @@ export type ChatBlink = {
   tokenMint: string;
 };
 
+export type ToolExecutionData = {
+  address: string;
+  amount: string;
+};
+
 export type ChatMessageKind = "user" | "agent" | "tool" | "blink";
 
 export type ChatMessage = {
@@ -17,6 +22,7 @@ export type ChatMessage = {
   align: "right" | "left";
   kind: ChatMessageKind;
   blink?: ChatBlink;
+  toolData?: ToolExecutionData;
   imageDataUrl?: string;
 };
 
