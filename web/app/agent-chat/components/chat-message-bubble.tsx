@@ -26,7 +26,7 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
         className={`${isBlink ? "w-full max-w-[640px]" : isUser ? "max-w-[500px]" : "max-w-[760px]"} ${
           isUser
             ? "rounded-2xl bg-zinc-900 px-4 py-3 text-white"
-            : "py-2 text-zinc-800"
+            : message.kind === "tool" ? "py-0 text-zinc-800" : "py-2 text-zinc-800"
         }`}
       >
         {!isUser && message.kind !== "tool" && (
@@ -35,7 +35,7 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
           </p>
         )}
         {message.kind === "tool" && message.toolData ? (
-          <div className={isUser ? "mt-2" : "mt-3"}>
+          <div className={isUser ? "mt-2" : "mt-0"}>
             <TransactionToolCard
               address={message.toolData.address}
               amount={message.toolData.amount}

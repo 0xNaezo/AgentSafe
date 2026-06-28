@@ -72,22 +72,34 @@ export function ChatPanel({
           </div>
         </div>
 
-        <div className="flex-1 min-h-0 space-y-4 overflow-y-auto p-5">
+        <div className="flex-1 min-h-0 flex flex-col p-5 overflow-y-auto">
           {messages.length === 0 && (
-            <div className="flex h-full items-center justify-center">
+            <div className="flex h-full flex-1 items-center justify-center">
               <p className="text-sm text-zinc-400">
                 Send a message to start the chat.
               </p>
             </div>
           )}
-          {messages.map((message, i) => (
-            <ChatMessageBubble
-              key={`${message.author}-${i}`}
-              message={message}
-            />
-          ))}
+          {messages.map((message, i) => {
+            const isConsecutiveTool =
+              i > 0 &&
+              messages[i - 1].kind === "tool" &&
+              message.kind === "tool";
+            return (
+              <div
+                key={`${message.author}-${i}`}
+                className={i === 0 ? "" : isConsecutiveTool ? "mt-1" : "mt-4"}
+              >
+                <ChatMessageBubble message={message} />
+              </div>
+            );
+          })}
           {loading && (
-            <div className="flex justify-start gap-3">
+            <div
+              className={`flex justify-start gap-3 ${
+                messages.length > 0 ? "mt-4" : ""
+              }`}
+            >
               <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-white">
                 <Bot size={17} aria-hidden="true" />
               </div>
