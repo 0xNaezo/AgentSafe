@@ -2,6 +2,7 @@
 
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { PublicKey, SystemProgram } from "@solana/web3.js";
+import type { TransactionInstruction } from "@solana/web3.js";
 import type BN from "bn.js";
 
 import type { AgentSafeProgram } from "./program";
@@ -36,6 +37,16 @@ export type UpdateVaultInput = {
   onetimeLimit: BN;
   owner: PublicKey;
   vaultState: PublicKey;
+};
+
+export type OwnerForceTransferInput = {
+  amount: BN;
+  owner: PublicKey;
+  preInstructions?: TransactionInstruction[];
+  toTokenAccount: PublicKey;
+  tokenMint: PublicKey;
+  vaultState: PublicKey;
+  vaultTokenAccount: PublicKey;
 };
 
 export async function fetchVault(
@@ -75,5 +86,23 @@ export async function updateVault(
       owner: input.owner,
       vaultState: input.vaultState,
     })
+    .rpc();
+}
+
+export async function ownerForceTransfer(
+  program: AgentSafeProgram,
+  input: OwnerForceTransferInput,
+): Promise<string> {
+  return program.methods
+    .ownerForceTransfer(input.amount)
+    .accountsStrict({
+      owner: input.owner,
+      vaultState: input.vaultState,
+      vaultTokenAccount: input.vaultTokenAccount,
+      toTokenAccount: input.toTokenAccount,
+      tokenMint: input.tokenMint,
+      tokenProgram: TOKEN_PROGRAM_ID,
+    })
+    .preInstructions(input.preInstructions ?? [])
     .rpc();
 }

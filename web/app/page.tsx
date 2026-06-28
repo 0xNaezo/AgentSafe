@@ -4,26 +4,36 @@ import { useCallback, useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useConnection, useWallet } from "@solana/wallet-adapter-react";
 import {
+  createAssociatedTokenAccountIdempotentInstruction,
+  createTransferCheckedInstruction,
   getAccount,
+  getAssociatedTokenAddressSync,
   getMint,
+  TOKEN_PROGRAM_ID,
   TokenAccountNotFoundError,
 } from "@solana/spl-token";
-import { PublicKey } from "@solana/web3.js";
+import { PublicKey, Transaction } from "@solana/web3.js";
 import {
   AlertTriangle,
   ArrowDown,
   ArrowRight,
   ArrowUp,
   CheckCircle2,
-  StopCircle,
+  Gift,
+  X,
   XCircle,
 } from "lucide-react";
-import { formatTokenAmount } from "@/lib/solana/amounts";
+import { toast } from "react-hot-toast";
+import { formatTokenAmount, parseTokenAmount } from "@/lib/solana/amounts";
 import { DEMO_TOKEN_MINT, PROGRAM_ID_MISMATCH } from "@/lib/solana/config";
 import { deriveVaultPda, deriveVaultTokenAccountPda } from "@/lib/solana/pda";
 import { useAgentSafeProgram } from "@/lib/solana/program";
 import { getEffectiveSpent } from "@/lib/solana/spending-window";
-import { fetchVault, type VaultAccount } from "@/lib/solana/vault";
+import {
+  fetchVault,
+  ownerForceTransfer,
+  type VaultAccount,
+} from "@/lib/solana/vault";
 import { AddressBadge } from "@/app/components/address-badge";
 import { ProgressMetric } from "@/app/components/progress-metric";
 import { StatusDot } from "@/app/components/status-dot";
@@ -52,6 +62,14 @@ type AuditEntry = {
   time: string;
   status: "Passed" | "Pending" | "Blocked";
 };
+
+type TokenAction = "deposit" | "withdraw";
+
+type ActionStatus =
+  | { kind: "idle" }
+  | { kind: "loading"; message: string }
+  | { kind: "success"; signature: string }
+  | { kind: "error"; message: string };
 
 const AUDIT_LOG: AuditEntry[] = [
   {
@@ -154,9 +172,15 @@ function statusDotColor(
 
 export default function Home() {
   const { connection } = useConnection();
-  const { publicKey } = useWallet();
+  const { publicKey, sendTransaction } = useWallet();
   const program = useAgentSafeProgram();
   const [state, setState] = useState<DashboardState>({ kind: "idle" });
+  const [activeAction, setActiveAction] = useState<TokenAction | null>(null);
+  const [amount, setAmount] = useState("");
+  const [actionStatus, setActionStatus] = useState<ActionStatus>({
+    kind: "idle",
+  });
+  const [isRequestingTestTokens, setIsRequestingTestTokens] = useState(false);
 
   const tokenMint = useMemo(() => parsePublicKeyOrNull(DEMO_TOKEN_MINT), []);
 
@@ -258,6 +282,153 @@ export default function Home() {
     return () => window.clearTimeout(timeoutId);
   }, [loadVault]);
 
+  const canUseVaultActions =
+    state.kind === "ready" &&
+    Boolean(publicKey) &&
+    Boolean(program) &&
+    Boolean(addresses) &&
+    Boolean(tokenMint) &&
+    !PROGRAM_ID_MISMATCH;
+
+  const isActionLoading = actionStatus.kind === "loading";
+
+  function openAction(action: TokenAction) {
+    setActiveAction(action);
+    setAmount("");
+    setActionStatus({ kind: "idle" });
+  }
+
+  function closeAction() {
+    if (isActionLoading) {
+      return;
+    }
+
+    setActiveAction(null);
+    setAmount("");
+    setActionStatus({ kind: "idle" });
+  }
+
+  async function handleActionSubmit(event: React.FormEvent<HTMLFormElement>) {
+    event.preventDefault();
+
+    try {
+      if (!activeAction) {
+        return;
+      }
+
+      if (!publicKey || !program || !addresses || !tokenMint) {
+        throw new Error("Connect the owner wallet and load the vault first.");
+      }
+
+      if (state.kind !== "ready") {
+        throw new Error("Vault is not ready yet.");
+      }
+
+      const parsedAmount = parseTokenAmount(amount, state.mintDecimals);
+
+      if (parsedAmount.toString() === "0") {
+        throw new Error("Amount must be greater than zero.");
+      }
+
+      const rawAmount = BigInt(parsedAmount.toString());
+
+      setActionStatus({
+        kind: "loading",
+        message:
+          activeAction === "deposit"
+            ? "Waiting for wallet signature..."
+            : "Preparing owner withdrawal...",
+      });
+
+      const ownerTokenAccount = getAssociatedTokenAddressSync(
+        tokenMint,
+        publicKey,
+        false,
+        TOKEN_PROGRAM_ID,
+      );
+
+      let signature: string;
+
+      if (activeAction === "deposit") {
+        const transaction = new Transaction().add(
+          createTransferCheckedInstruction(
+            ownerTokenAccount,
+            tokenMint,
+            addresses.vaultTokenAccount,
+            publicKey,
+            rawAmount,
+            state.mintDecimals,
+            [],
+            TOKEN_PROGRAM_ID,
+          ),
+        );
+
+        signature = await sendTransaction(transaction, connection);
+        await connection.confirmTransaction(signature, "confirmed");
+      } else {
+        signature = await ownerForceTransfer(program, {
+          amount: parsedAmount,
+          owner: publicKey,
+          preInstructions: [
+            createAssociatedTokenAccountIdempotentInstruction(
+              publicKey,
+              ownerTokenAccount,
+              publicKey,
+              tokenMint,
+              TOKEN_PROGRAM_ID,
+            ),
+          ],
+          toTokenAccount: ownerTokenAccount,
+          tokenMint,
+          vaultState: addresses.vaultState,
+          vaultTokenAccount: addresses.vaultTokenAccount,
+        });
+      }
+
+      setActionStatus({ kind: "success", signature });
+      toast.success(
+        `${activeAction === "deposit" ? "Deposit" : "Withdraw"} confirmed`,
+      );
+      await loadVault();
+    } catch (error) {
+      const message = getErrorMessage(error);
+      setActionStatus({ kind: "error", message });
+      toast.error(message);
+    }
+  }
+
+  async function requestTestTokens() {
+    try {
+      if (!publicKey) {
+        throw new Error("Connect a wallet first.");
+      }
+
+      setIsRequestingTestTokens(true);
+
+      const response = await fetch("/api/test-tokens", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ recipient: publicKey.toBase58() }),
+      });
+
+      const body = (await response.json()) as {
+        amount?: string;
+        error?: string;
+        signature?: string;
+      };
+
+      if (!response.ok) {
+        throw new Error(body.error ?? "Failed to send test tokens.");
+      }
+
+      toast.success(`Sent ${body.amount ?? "1000"} test USDC`);
+    } catch (error) {
+      toast.error(getErrorMessage(error));
+    } finally {
+      setIsRequestingTestTokens(false);
+    }
+  }
+
   /* Derive display values from vault state or fall back to mock data */
   const balance = state.kind === "ready" ? state.vaultBalance : "0.00";
 
@@ -337,17 +508,30 @@ export default function Home() {
             </div>
             <p className="mt-1 text-sm text-zinc-400">≈ ${balance} USD</p>
           </div>
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800"
+              onClick={requestTestTokens}
+              disabled={!publicKey || isRequestingTestTokens}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-2 text-sm font-semibold text-emerald-700 transition hover:border-emerald-300 hover:bg-emerald-100 disabled:cursor-not-allowed disabled:opacity-50"
+            >
+              <Gift size={15} aria-hidden="true" />
+              {isRequestingTestTokens ? "Sending..." : "Get test tokens"}
+            </button>
+            <button
+              type="button"
+              onClick={() => openAction("deposit")}
+              disabled={!canUseVaultActions}
+              className="inline-flex items-center gap-1.5 rounded-lg bg-zinc-900 px-4 py-2 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ArrowDown size={15} aria-hidden="true" />
               Deposit
             </button>
             <button
               type="button"
-              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-700  transition hover:border-zinc-300 hover:bg-zinc-50"
+              onClick={() => openAction("withdraw")}
+              disabled={!canUseVaultActions}
+              className="inline-flex items-center gap-1.5 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-2 text-sm font-semibold text-zinc-700  transition hover:border-zinc-300 hover:bg-zinc-50 disabled:cursor-not-allowed disabled:opacity-50"
             >
               <ArrowUp size={15} aria-hidden="true" />
               Withdraw
@@ -457,6 +641,104 @@ export default function Home() {
           </table>
         </div>
       </div>
+
+      {activeAction ? (
+        <div
+          className="fixed inset-0 z-50 flex items-center justify-center bg-zinc-950/30 p-4"
+          role="dialog"
+          aria-modal="true"
+          aria-labelledby="token-action-title"
+        >
+          <form
+            onSubmit={handleActionSubmit}
+            className="w-full max-w-sm rounded-lg border border-zinc-200 bg-white p-5 shadow-xl"
+          >
+            <div className="flex items-start justify-between gap-4">
+              <div>
+                <h2
+                  id="token-action-title"
+                  className="text-lg font-semibold text-zinc-950"
+                >
+                  {activeAction === "deposit" ? "Deposit tokens" : "Withdraw tokens"}
+                </h2>
+                <p className="mt-1 text-sm text-zinc-500">
+                  {activeAction === "deposit"
+                    ? "Send tokens from your wallet to the vault."
+                    : "Send vault tokens back to your connected wallet."}
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={closeAction}
+                disabled={isActionLoading}
+                className="inline-flex h-8 w-8 items-center justify-center rounded-lg text-zinc-500 transition hover:bg-zinc-100 hover:text-zinc-900 disabled:opacity-50"
+                aria-label="Close"
+              >
+                <X size={16} aria-hidden="true" />
+              </button>
+            </div>
+
+            <label
+              htmlFor="token-action-amount"
+              className="mt-5 block text-sm font-medium text-zinc-700"
+            >
+              Amount
+            </label>
+            <div className="mt-2 flex rounded-lg border border-zinc-200 bg-zinc-50 focus-within:border-zinc-400">
+              <input
+                id="token-action-amount"
+                inputMode="decimal"
+                value={amount}
+                onChange={(event) => setAmount(event.target.value)}
+                disabled={isActionLoading}
+                placeholder="0.00"
+                className="min-w-0 flex-1 bg-transparent px-3 py-2 text-sm font-medium text-zinc-950 outline-none placeholder:text-zinc-400"
+              />
+              <span className="flex items-center border-l border-zinc-200 px-3 text-sm font-semibold text-zinc-500">
+                USDC
+              </span>
+            </div>
+
+            {actionStatus.kind === "loading" ? (
+              <p className="mt-3 text-sm text-zinc-500">
+                {actionStatus.message}
+              </p>
+            ) : null}
+            {actionStatus.kind === "error" ? (
+              <p className="mt-3 text-sm font-medium text-rose-600">
+                {actionStatus.message}
+              </p>
+            ) : null}
+            {actionStatus.kind === "success" ? (
+              <p className="mt-3 break-all text-sm font-medium text-emerald-600">
+                Confirmed: {actionStatus.signature}
+              </p>
+            ) : null}
+
+            <div className="mt-5 flex justify-end gap-2">
+              <button
+                type="button"
+                onClick={closeAction}
+                disabled={isActionLoading}
+                className="inline-flex h-10 items-center justify-center rounded-lg border border-zinc-200 bg-white px-4 text-sm font-semibold text-zinc-700 transition hover:bg-zinc-50 disabled:opacity-50"
+              >
+                Cancel
+              </button>
+              <button
+                type="submit"
+                disabled={isActionLoading}
+                className="inline-flex h-10 items-center justify-center gap-2 rounded-lg bg-zinc-900 px-4 text-sm font-semibold text-white transition hover:bg-zinc-800 disabled:opacity-50"
+              >
+                {isActionLoading
+                  ? "Processing..."
+                  : activeAction === "deposit"
+                    ? "Deposit"
+                    : "Withdraw"}
+              </button>
+            </div>
+          </form>
+        </div>
+      ) : null}
     </>
   );
 }
@@ -468,4 +750,8 @@ function parsePublicKeyOrNull(value: string) {
   } catch {
     return null;
   }
+}
+
+function getErrorMessage(error: unknown) {
+  return error instanceof Error ? error.message : "Unexpected error.";
 }
