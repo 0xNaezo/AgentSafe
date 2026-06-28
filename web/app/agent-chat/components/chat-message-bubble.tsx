@@ -3,6 +3,7 @@ import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
 import type { LucideIcon } from "lucide-react";
 import { AgentSafeBlink } from "@/app/blinks/render";
+import { TransactionToolCard } from "./transaction-tool-card";
 import type { ChatMessage, ChatMessageKind } from "../types";
 
 type ChatMessageBubbleProps = {
@@ -16,7 +17,7 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
 
   return (
     <div className={`flex gap-3 ${isUser ? "justify-end" : "justify-start"}`}>
-      {!isUser && (
+      {!isUser && message.kind !== "tool" && (
         <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-zinc-900 text-white">
           <Icon size={17} aria-hidden="true" />
         </div>
@@ -28,12 +29,19 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
             : "py-2 text-zinc-800"
         }`}
       >
-        {!isUser && (
+        {!isUser && message.kind !== "tool" && (
           <p className="text-xs font-semibold text-zinc-500">
             {message.author}
           </p>
         )}
-        {isBlink && message.blink ? (
+        {message.kind === "tool" && message.toolData ? (
+          <div className={isUser ? "mt-2" : "mt-3"}>
+            <TransactionToolCard
+              address={message.toolData.address}
+              amount={message.toolData.amount}
+            />
+          </div>
+        ) : isBlink && message.blink ? (
           <div className={isUser ? "mt-2" : "mt-3"}>
             <AgentSafeBlink
               amount={message.blink.amount}

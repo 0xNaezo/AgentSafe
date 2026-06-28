@@ -330,11 +330,17 @@ function AgentChatSession({
 
       if (data.toolCalls?.length) {
         for (const tc of data.toolCalls) {
+          const isTransfer = tc.name === "execute_payment";
+          
           newMessages.push({
             author: `Tool: ${tc.name}`,
             body: "```json\n" + JSON.stringify(tc.args, null, 2) + "\n```",
             align: "left",
             kind: "tool",
+            toolData: isTransfer ? {
+              address: (tc.args as any).address,
+              amount: (tc.args as any).amount,
+            } : undefined,
           });
         }
       }
