@@ -319,11 +319,7 @@ function AgentChatSession({
       }
 
       if (data.messages) {
-        setHistory(
-          data.messages.filter(
-            (message) => message.role !== "tool" && !message.tool_calls,
-          ),
-        );
+        setHistory(data.messages);
       }
 
       const newMessages: ChatMessage[] = [];

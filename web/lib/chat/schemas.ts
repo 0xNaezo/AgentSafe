@@ -36,9 +36,20 @@ const contentPartSchema = z.discriminatedUnion("type", [
   imageContentPartSchema,
 ]);
 
+const toolCallSchema = z.object({
+  id: z.string(),
+  type: z.literal("function"),
+  function: z.object({
+    name: z.string(),
+    arguments: z.string(),
+  }),
+});
+
 export const chatRequestMessageSchema = z.object({
-  role: z.enum(["user", "assistant"]),
+  role: z.enum(["user", "assistant", "tool"]),
   content: z.union([z.string().nullable(), z.array(contentPartSchema)]),
+  tool_calls: z.array(toolCallSchema).optional(),
+  tool_call_id: z.string().optional(),
 });
 
 export const chatRequestBodySchema = z.object({
