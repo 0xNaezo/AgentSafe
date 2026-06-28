@@ -3,6 +3,7 @@ import { PublicKey } from "@solana/web3.js";
 
 import { executePaymentWithAgent } from "../agent/execute-payment";
 import { getAnchorProgram } from "../agent/program";
+import { getAgentPubkey } from "../agent/signer";
 import { parseTokenAmount } from "../solana/amounts";
 import { deriveVaultPda } from "../solana/pda";
 import { executePaymentToolArgsSchema } from "./schemas";
@@ -12,6 +13,7 @@ type ToolExecutionResult =
   | {
       executed: true;
       signature: string;
+      agentPubkey: string;
       tool: "execute_payment";
       recipient: string;
       amount: string;
@@ -28,6 +30,8 @@ type ToolExecutionResult =
   | {
       executed: false;
       reason: string;
+      recipient?: string;
+      amount?: string;
     };
 
 function getErrorMessage(error: unknown) {
@@ -108,7 +112,12 @@ export async function executeToolCall(
     parsedArguments.args.address,
   );
   if (!validRecipientOwner.ok) {
-    return { executed: false, reason: validRecipientOwner.error };
+    return {
+      executed: false,
+      reason: validRecipientOwner.error,
+      recipient: parsedArguments.args.address.toBase58(),
+      amount: parsedArguments.args.amount,
+    };
   }
 
   try {
@@ -125,14 +134,24 @@ export async function executeToolCall(
     );
 
     if (amountUnits.toString() === "0") {
-      return { executed: false, reason: "amount must be greater than zero" };
+      return {
+        executed: false,
+        reason: "amount must be greater than zero",
+        recipient: parsedArguments.args.address.toBase58(),
+        amount: parsedArguments.args.amount,
+      };
     }
 
     const [vaultPda] = deriveVaultPda(context.owner, context.tokenMint);
     const vault = await program.account.vault.fetchNullable(vaultPda);
 
     if (!vault) {
-      return { executed: false, reason: "vault account was not found" };
+      return {
+        executed: false,
+        reason: "vault account was not found",
+        recipient: parsedArguments.args.address.toBase58(),
+        amount: parsedArguments.args.amount,
+      };
     }
 
     if (
@@ -162,12 +181,18 @@ export async function executeToolCall(
     return {
       executed: true,
       signature,
+      agentPubkey: getAgentPubkey().toBase58(),
       tool: "execute_payment",
       recipient: parsedArguments.args.address.toBase58(),
       amount: parsedArguments.args.amount,
     };
   } catch (error) {
     console.error("Payment tool execution failed:", error);
-    return { executed: false, reason: getErrorMessage(error) };
+    return {
+      executed: false,
+      reason: getErrorMessage(error),
+      recipient: parsedArguments.args.address.toBase58(),
+      amount: parsedArguments.args.amount,
+    };
   }
 }

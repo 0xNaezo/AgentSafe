@@ -7,6 +7,7 @@ import {
   buildChatAuthMessage,
   CHAT_AUTH_TTL_MS,
 } from "@/lib/chat/auth-message";
+import { appendAuditLogEntries } from "@/lib/audit-log";
 import { DEMO_TOKEN_MINT } from "@/lib/solana/config";
 import {
   getChatSessionStorageKey,
@@ -320,6 +321,10 @@ function AgentChatSession({
 
       if (data.messages) {
         setHistory(data.messages);
+      }
+
+      if (data.auditEvents?.length) {
+        appendAuditLogEntries(data.auditEvents);
       }
 
       const newMessages: ChatMessage[] = [];

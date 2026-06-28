@@ -1,3 +1,7 @@
+import {
+  createAuditLogEntryId,
+  type AuditLogEntry,
+} from "@/lib/audit-log";
 import { callOpenRouter } from "./openrouter";
 import { toolResultSummarySchema } from "./schemas";
 import { extractToolCalls } from "./tool-calls";
@@ -11,6 +15,63 @@ import type {
 } from "./types";
 
 const MAX_TOOL_CALL_ITERATIONS = 10;
+
+function createAuditEvent(
+  toolResult: Awaited<ReturnType<typeof executeToolCall>>,
+  executionContext: ChatExecutionContext,
+): AuditLogEntry {
+  const owner = executionContext.owner.toBase58();
+  const tokenMint = executionContext.tokenMint.toBase58();
+  const createdAt = Date.now();
+
+  if (toolResult.executed) {
+    return {
+      id: createAuditLogEntryId(),
+      createdAt,
+      source: "agent_chat",
+      event: "Auto-payment executed",
+      status: "Passed",
+      owner,
+      tokenMint,
+      recipient: toolResult.recipient,
+      amount: toolResult.amount,
+      signature: toolResult.signature,
+      agentPubkey: toolResult.agentPubkey,
+      tool: toolResult.tool,
+    };
+  }
+
+  if ("requiresOwnerApproval" in toolResult && toolResult.requiresOwnerApproval) {
+    return {
+      id: createAuditLogEntryId(),
+      createdAt,
+      source: "agent_chat",
+      event: "Manual approval required",
+      status: "Pending",
+      owner,
+      tokenMint,
+      recipient: toolResult.recipient,
+      amount: toolResult.amount,
+      reason: toolResult.reason,
+      approvalType: toolResult.approvalType,
+      tool: "execute_payment",
+    };
+  }
+
+  return {
+    id: createAuditLogEntryId(),
+    createdAt,
+    source: "agent_chat",
+    event: "Payment blocked",
+    status: "Blocked",
+    owner,
+    tokenMint,
+    recipient: toolResult.recipient,
+    amount: toolResult.amount,
+    reason: toolResult.reason,
+    tool: "execute_payment",
+  };
+}
 
 function summarizeToolResults(messages: ChatMessage[]) {
   const toolResults = messages
@@ -56,6 +117,7 @@ export async function completeChat(
 ): Promise<ChatCompletionResult> {
   const allToolCalls: ToolCallResult[] = [];
   const approvalRequests: OwnerApprovalRequest[] = [];
+  const auditEvents: AuditLogEntry[] = [];
   let iteration = 0;
 
   while (iteration < MAX_TOOL_CALL_ITERATIONS) {
@@ -72,6 +134,7 @@ export async function completeChat(
           reply: fallbackReply,
           toolCalls: allToolCalls,
           approvalRequests,
+          auditEvents,
           messages,
         };
       }
@@ -84,6 +147,7 @@ export async function completeChat(
         reply: "No response from model",
         toolCalls: allToolCalls,
         approvalRequests,
+        auditEvents,
         messages,
       };
     }
@@ -98,6 +162,7 @@ export async function completeChat(
         reply: choice.message.content ?? "",
         toolCalls: allToolCalls,
         approvalRequests,
+        auditEvents,
         messages,
       };
     }
@@ -113,6 +178,7 @@ export async function completeChat(
 
       for (const tc of toolCalls) {
         const toolResult = await executeToolCall(tc, executionContext);
+        auditEvents.push(createAuditEvent(toolResult, executionContext));
 
         if (
           "requiresOwnerApproval" in toolResult &&
@@ -147,6 +213,7 @@ export async function completeChat(
       reply: choice.message.content ?? "",
       toolCalls: allToolCalls,
       approvalRequests,
+      auditEvents,
       messages,
     };
   }
@@ -155,6 +222,7 @@ export async function completeChat(
     reply: "Reached maximum number of tool call iterations.",
     toolCalls: allToolCalls,
     approvalRequests,
+    auditEvents,
     messages,
   };
 }
