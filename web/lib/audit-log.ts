@@ -45,7 +45,18 @@ function isAuditLogEntry(value: unknown): value is AuditLogEntry {
       entry.status === "Pending" ||
       entry.status === "Blocked") &&
     typeof entry.owner === "string" &&
-    typeof entry.tokenMint === "string"
+    typeof entry.tokenMint === "string" &&
+    (entry.recipient === undefined || typeof entry.recipient === "string") &&
+    (entry.amount === undefined || typeof entry.amount === "string") &&
+    (entry.signature === undefined || typeof entry.signature === "string") &&
+    (entry.reason === undefined || typeof entry.reason === "string") &&
+    (entry.agentPubkey === undefined || typeof entry.agentPubkey === "string") &&
+    (entry.tool === undefined || entry.tool === "execute_payment") &&
+    (entry.approvalType === undefined ||
+      entry.approvalType === "owner_force_transfer") &&
+    (entry.vaultState === undefined || typeof entry.vaultState === "string") &&
+    (entry.vaultTokenAccount === undefined ||
+      typeof entry.vaultTokenAccount === "string")
   );
 }
 
