@@ -287,6 +287,7 @@ export default function Home() {
     Boolean(publicKey) &&
     Boolean(program) &&
     Boolean(addresses) &&
+    Boolean(addresses?.vaultTokenAccount) &&
     Boolean(tokenMint) &&
     !PROGRAM_ID_MISMATCH;
 

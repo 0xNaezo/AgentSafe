@@ -45,12 +45,28 @@ const toolCallSchema = z.object({
   }),
 });
 
-export const chatRequestMessageSchema = z.object({
-  role: z.enum(["user", "assistant", "tool"]),
+const userMessageSchema = z.object({
+  role: z.literal("user"),
+  content: z.union([z.string().nullable(), z.array(contentPartSchema)]),
+});
+
+const assistantMessageSchema = z.object({
+  role: z.literal("assistant"),
   content: z.union([z.string().nullable(), z.array(contentPartSchema)]),
   tool_calls: z.array(toolCallSchema).optional(),
+});
+
+const toolMessageSchema = z.object({
+  role: z.literal("tool"),
+  content: z.union([z.string().nullable(), z.array(contentPartSchema)]),
   tool_call_id: z.string().optional(),
 });
+
+export const chatRequestMessageSchema = z.discriminatedUnion("role", [
+  userMessageSchema,
+  assistantMessageSchema,
+  toolMessageSchema,
+]);
 
 export const chatRequestBodySchema = z.object({
   messages: z.unknown(),
