@@ -46,6 +46,7 @@ type DashboardState =
       vault: VaultAccount;
       mintDecimals: number;
       vaultBalance: string;
+      vaultTokenAccountExists: boolean;
     }
   | { kind: "error"; message: string };
 
@@ -139,6 +140,7 @@ export default function Home() {
             tokenAccount.amount.toString(),
             mint.decimals,
           ),
+          vaultTokenAccountExists: true,
         });
       } catch (error) {
         if (error instanceof TokenAccountNotFoundError) {
@@ -147,6 +149,7 @@ export default function Home() {
             vault,
             mintDecimals: mint.decimals,
             vaultBalance: "0",
+            vaultTokenAccountExists: false,
           });
           return;
         }
@@ -200,6 +203,7 @@ export default function Home() {
 
   const canUseVaultActions =
     state.kind === "ready" &&
+    state.vaultTokenAccountExists &&
     Boolean(publicKey) &&
     Boolean(program) &&
     Boolean(addresses) &&
