@@ -1,6 +1,7 @@
 import { Bot, ShieldCheck, User, Wrench } from "lucide-react";
 import ReactMarkdown from "react-markdown";
 import remarkGfm from "remark-gfm";
+import remarkBreaks from "remark-breaks";
 import type { LucideIcon } from "lucide-react";
 import { AgentSafeBlink } from "@/app/blinks/render";
 import { TransactionToolCard } from "./transaction-tool-card";
@@ -68,7 +69,7 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
                     : "prose-zinc mt-2 [&_pre]:bg-zinc-50 [&_pre]:text-zinc-900 [&_pre]:border [&_pre]:border-zinc-200 [&_code]:bg-zinc-100 [&_code]:text-zinc-900"
                 }`}
               >
-                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
                   {message.body}
                 </ReactMarkdown>
               </div>
