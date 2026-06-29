@@ -35,9 +35,11 @@ export function AgentSafeBlink({
   recipient,
   tokenMint,
 }: AgentSafeBlinkProps) {
+  const { publicKey } = useWallet();
+  const owner = publicKey?.toBase58();
   const blinkApiUrl = useMemo(
-    () => buildBlinkApiUrl(recipient, amount, tokenMint),
-    [amount, recipient, tokenMint],
+    () => buildBlinkApiUrl(recipient, amount, tokenMint, owner),
+    [amount, recipient, tokenMint, owner],
   );
   const adapter = useAgentSafeBlinkAdapter();
   const { blink, isLoading } = useBlink({ url: blinkApiUrl });
@@ -103,6 +105,7 @@ function buildBlinkApiUrl(
   recipient: string,
   amount: string,
   tokenMint: string,
+  owner?: string,
 ) {
   const path = "/blinks";
   const searchParams = new URLSearchParams({
@@ -110,6 +113,10 @@ function buildBlinkApiUrl(
     amount,
     tokenMint,
   });
+
+  if (owner) {
+    searchParams.set("owner", owner);
+  }
 
   if (typeof window === "undefined") {
     return `${path}?${searchParams.toString()}`;

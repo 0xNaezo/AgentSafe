@@ -86,25 +86,64 @@ export const GET = async (req: Request) => {
   try {
     const requestUrl = new URL(req.url);
 
-    const amount = requestUrl.searchParams.get("amount") || 0;
+    const amount = requestUrl.searchParams.get("amount") || "0";
     const recipient = parsePublicKey(requestUrl.searchParams.get("to"), "to");
     const tokenMint = parsePublicKey(
       requestUrl.searchParams.get("tokenMint"),
       "tokenMint",
     );
 
+    // Fetch vault state for dynamic policy-check values on the OG image
+    let dailyLimit = "0";
+    let dailyUsed = "0";
+    let onetimeLimit = "0";
+
+    const ownerParam = requestUrl.searchParams.get("owner");
+    if (ownerParam) {
+      try {
+        const owner = new PublicKey(ownerParam);
+        const [vaultPda] = deriveVaultPda(owner, tokenMint);
+        const program = getAnchorProgram();
+        const vault = await program.account.vault.fetchNullable(vaultPda);
+
+        if (vault) {
+          const v = vault as {
+            dailyLimit: BN;
+            onetimeLimit: BN;
+            spentToday: BN;
+            lastResetTime: BN;
+          };
+
+          // Epoch-aligned lazy-reset (mirrors on-chain logic)
+          const now = Math.floor(Date.now() / 1000);
+          const SECONDS_PER_DAY = 86_400;
+          const currentDay = Math.floor(now / SECONDS_PER_DAY);
+          const lastDay = Math.floor(v.lastResetTime.toNumber() / SECONDS_PER_DAY);
+          const effectiveDaily = currentDay > lastDay ? 0 : v.spentToday.toNumber();
+
+          const divider = 10 ** TOKEN_DECIMALS;
+          dailyLimit = String(v.dailyLimit.toNumber() / divider);
+          dailyUsed = String(effectiveDaily / divider);
+          onetimeLimit = String(v.onetimeLimit.toNumber() / divider);
+        }
+      } catch (err) {
+        console.warn("Vault fetch for OG image failed, proceeding without policy checks:", err);
+      }
+    }
+
+    const ogUrl = new URL("/blinks/og", requestUrl.origin);
+    ogUrl.searchParams.set("amount", amount);
+    ogUrl.searchParams.set("to", recipient.toBase58());
+    ogUrl.searchParams.set("dailyLimit", dailyLimit);
+    ogUrl.searchParams.set("dailyUsed", dailyUsed);
+    ogUrl.searchParams.set("onetimeLimit", onetimeLimit);
+
     const payload: ActionGetResponse = {
       type: "action",
-      title: "AgentSafe: Force Transfer",
-      icon: new URL("/logo.png", requestUrl.origin).toString(),
-      description: [
-        "Agent exceeded the limit.",
-        `- Address - ${recipient.toBase58()}`,
-        `- Amount - ${amount} USDC`,
-        `- Token mint - ${tokenMint.toBase58()}`,
-        "",
-        "Note: This is a single-use action. Once confirmed on-chain, please ignore this card",
-      ].join("\n"),
+      title: "AgentSafe: Approve Transfer",
+      icon: ogUrl.toString(),
+      description:
+        "Note: This is a single-use action. Once confirmed on-chain, please ignore this card.",
       label: "Approve Transfer",
     };
 
