@@ -86,7 +86,9 @@ export const GET = async (req: Request) => {
   try {
     const requestUrl = new URL(req.url);
 
-    const amount = requestUrl.searchParams.get("amount") || "0";
+    const amountParam = requestUrl.searchParams.get("amount");
+    parseAmount(amountParam);
+    const amount = amountParam ?? "0";
     const recipient = parsePublicKey(requestUrl.searchParams.get("to"), "to");
     const tokenMint = parsePublicKey(
       requestUrl.searchParams.get("tokenMint"),
@@ -123,10 +125,14 @@ export const GET = async (req: Request) => {
           const SECONDS_PER_DAY = 86_400;
           const SECONDS_PER_HOUR = 3_600;
           const currentDay = Math.floor(now / SECONDS_PER_DAY);
-          const lastDay = Math.floor(v.lastResetTime.toNumber() / SECONDS_PER_DAY);
+          const lastDay = Math.floor(
+            v.lastResetTime.toNumber() / SECONDS_PER_DAY,
+          );
           const currentHour = Math.floor(now / SECONDS_PER_HOUR);
-          const lastHour = Math.floor(v.lastResetTime.toNumber() / SECONDS_PER_HOUR);
-          
+          const lastHour = Math.floor(
+            v.lastResetTime.toNumber() / SECONDS_PER_HOUR,
+          );
+
           let effectiveDaily = v.spentToday.toNumber();
           let effectiveHourly = v.spentHour.toNumber();
 
@@ -145,7 +151,10 @@ export const GET = async (req: Request) => {
           onetimeLimit = String(v.onetimeLimit.toNumber() / divider);
         }
       } catch (err) {
-        console.warn("Vault fetch for OG image failed, proceeding without policy checks:", err);
+        console.warn(
+          "Vault fetch for OG image failed, proceeding without policy checks:",
+          err,
+        );
       }
     }
 
