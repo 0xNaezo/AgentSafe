@@ -14,7 +14,6 @@ import { Check } from "lucide-react";
 import { BN } from "@coral-xyz/anchor";
 
 import { AgentTokenCards } from "./components/agent-token-cards";
-import { DangerZoneCard } from "./components/danger-zone-card";
 import { RecipientWhitelistCard } from "./components/recipient-whitelist-card";
 import { SpendingLimitsCard } from "./components/spending-limits-card";
 import { DEFAULT_AGENT_ADDRESS, INITIAL_WHITELIST } from "./data";
@@ -262,8 +261,6 @@ export default function VaultSettingsPage() {
       />
 
       <AgentTokenCards agentAddress={agentAddress} tokenMint={tokenMintStr} />
-
-      <DangerZoneCard />
     </div>
   );
 }
