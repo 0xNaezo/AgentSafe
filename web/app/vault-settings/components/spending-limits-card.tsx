@@ -45,7 +45,7 @@ export function SpendingLimitsCard({
           label="Hourly limit"
           value={hourlyLimit}
           onChange={onHourlyLimitChange}
-          description="Rolling 60 min window"
+          description="Resets every 60m"
         />
         <LimitField
           label="Per-payment cap"
