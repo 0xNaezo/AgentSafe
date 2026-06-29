@@ -10,7 +10,7 @@
     "typecheck": "tsc --noEmit --incremental false"
   },
   "dependencies": {
-    "@anchor-lang/core": "1.0.2",
+    "@anchor-lang/core": "1.1.2",
     "@coral-xyz/anchor": "^0.32.1",
     "@dialectlabs/blinks": "^0.22.5",
     "@noble/curves": "^1.9.7",
@@ -22,12 +22,12 @@
     "@solana/web3.js": "1.98.4",
     "@tailwindcss/typography": "^0.5.20",
     "@vercel/og": "^0.11.1",
-    "bn.js": "5.2.3",
+    "bn.js": "5.2.4",
     "bs58": "^6.0.0",
     "lucide-react": "^0.468.0",
-    "next": "16.2.7",
-    "react": "19.2.4",
-    "react-dom": "19.2.4",
+    "next": "16.2.9",
+    "react": "19.2.7",
+    "react-dom": "19.2.7",
     "react-hot-toast": "^2.6.0",
     "react-markdown": "^10.1.0",
     "remark-breaks": "^4.0.0",
@@ -35,13 +35,13 @@
     "zod": "^3.25.76"
   },
   "devDependencies": {
-    "@tailwindcss/postcss": "^4.1.18",
+    "@tailwindcss/postcss": "^4.3.2",
     "@types/bs58": "^4.0.4",
     "@types/node": "^20.19.27",
-    "@types/react": "^19.2.7",
+    "@types/react": "^19.2.17",
     "@types/react-dom": "^19.2.3",
     "eslint": "^9.39.2",
-    "eslint-config-next": "16.2.7",
+    "eslint-config-next": "16.2.9",
     "tailwindcss": "^4.1.18",
     "typescript": "^5.9.3"
   }
