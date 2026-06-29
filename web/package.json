@@ -21,6 +21,7 @@
     "@solana/wallet-adapter-wallets": "0.19.38",
     "@solana/web3.js": "1.98.4",
     "@tailwindcss/typography": "^0.5.20",
+    "@vercel/og": "^0.11.1",
     "bn.js": "5.2.3",
     "bs58": "^6.0.0",
     "lucide-react": "^0.468.0",
