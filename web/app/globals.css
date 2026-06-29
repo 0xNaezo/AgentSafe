@@ -74,8 +74,22 @@ a {
 }
 
 .agentsafe-blink-shell .blink-image img {
-  aspect-ratio: 800 / 418;
+  aspect-ratio: 800 / 380;
   object-fit: cover;
+}
+
+.agentsafe-blink-shell .blink {
+  border: none !important;
+  box-shadow: none !important;
+  background: transparent !important;
+}
+
+.blink.x-light {
+  --blink-border-radius-rounded-lg: 0.25rem;
+  --blink-border-radius-rounded-xl: 0.5rem;
+  --blink-border-radius-rounded-2xl: 0.75rem;
+  --blink-border-radius-button: 0.5rem;
+  --blink-border-radius-input: 0.5rem;
 }
 
 /* ─── Copy pop animation ─── */

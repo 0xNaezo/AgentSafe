@@ -4,7 +4,7 @@ import { NextRequest } from "next/server";
 export const runtime = "edge";
 
 const WIDTH = 800;
-const HEIGHT = 418;
+const HEIGHT = 380;
 
 // ── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -56,9 +56,11 @@ function buildPolicyChecks(params: {
   amount: number;
   dailyLimit: number;
   dailyUsed: number;
+  hourlyLimit: number;
+  hourlyUsed: number;
   onetimeLimit: number;
 }): PolicyCheckItem[] {
-  const { amount, dailyLimit, dailyUsed, onetimeLimit } = params;
+  const { amount, dailyLimit, dailyUsed, hourlyLimit, hourlyUsed, onetimeLimit } = params;
   const checks: PolicyCheckItem[] = [];
 
   if (dailyLimit > 0) {
@@ -70,6 +72,18 @@ function buildPolicyChecks(params: {
         ? `${formatWholeNumber(String(remaining))} of ${formatWholeNumber(String(dailyLimit))} left`
         : `Exceeds by ${formatWholeNumber(String(Math.ceil(amount - remaining)))}`,
       status: withinDaily ? "pass" : "warn",
+    });
+  }
+
+  if (hourlyLimit > 0) {
+    const remaining = Math.max(0, hourlyLimit - hourlyUsed);
+    const withinHourly = amount <= remaining;
+    checks.push({
+      label: "Within hourly limit",
+      value: withinHourly
+        ? `${formatWholeNumber(String(remaining))} of ${formatWholeNumber(String(hourlyLimit))} left`
+        : `Exceeds by ${formatWholeNumber(String(Math.ceil(amount - remaining)))}`,
+      status: withinHourly ? "pass" : "warn",
     });
   }
 
@@ -106,8 +120,8 @@ async function loadFonts(origin: string) {
 function CheckCircle() {
   return (
     <svg
-      width="18"
-      height="18"
+      width="28"
+      height="28"
       viewBox="0 0 24 24"
       fill="none"
       stroke="#16a34a"
@@ -124,8 +138,8 @@ function CheckCircle() {
 function AlertCircle() {
   return (
     <svg
-      width="18"
-      height="18"
+      width="28"
+      height="28"
       viewBox="0 0 24 24"
       fill="none"
       stroke="#d97706"
@@ -140,20 +154,25 @@ function AlertCircle() {
   );
 }
 
-function ShieldIcon() {
+function UsdcLogo() {
   return (
     <svg
-      width="14"
-      height="14"
-      viewBox="0 0 24 24"
-      fill="none"
-      stroke="#ffffff"
-      strokeWidth="2.5"
-      strokeLinecap="round"
-      strokeLinejoin="round"
+      width="44"
+      height="44"
+      viewBox="0 0 2000 2000"
     >
-      <path d="M20 13c0 5-3.5 7.5-7.66 8.95a1 1 0 0 1-.67-.01C7.5 20.5 4 18 4 13V6a1 1 0 0 1 1-1c2 0 4.5-1.2 6.24-2.72a1.17 1.17 0 0 1 1.52 0C14.51 3.81 17 5 19 5a1 1 0 0 1 1 1z" />
-      <path d="m9 12 2 2 4-4" />
+      <path
+        d="M1000 2000c554.17 0 1000-445.83 1000-1000S1554.17 0 1000 0 0 445.83 0 1000s445.83 1000 1000 1000z"
+        fill="#2775ca"
+      />
+      <path
+        d="M1275 1158.33c0-145.83-87.5-195.83-262.5-216.66-125-16.67-150-50-150-108.34s41.67-95.83 125-95.83c75 0 116.67 25 137.5 87.5 4.17 12.5 16.67 20.83 29.17 20.83h66.66c16.67 0 29.17-12.5 29.17-29.16v-4.17c-16.67-91.67-91.67-162.5-187.5-170.83v-100c0-16.67-12.5-29.17-33.33-33.34h-62.5c-16.67 0-29.17 12.5-33.34 33.34v95.83c-125 16.67-204.16 100-204.16 204.17 0 137.5 83.33 191.66 258.33 212.5 116.67 20.83 154.17 45.83 154.17 112.5s-58.34 112.5-137.5 112.5c-108.34 0-145.84-45.84-158.34-108.34-4.16-16.66-16.66-25-29.16-25h-70.84c-16.66 0-29.16 12.5-29.16 29.17v4.17c16.66 104.16 83.33 179.16 220.83 200v100c0 16.66 12.5 29.16 33.33 33.33h62.5c16.67 0 29.17-12.5 33.34-33.33v-100c125-20.84 208.33-108.34 208.33-220.84z"
+        fill="#fff"
+      />
+      <path
+        d="M787.5 1595.83c-325-116.66-491.67-479.16-370.83-800 62.5-175 200-308.33 370.83-370.83 16.67-8.33 25-20.83 25-41.67V325c0-16.67-8.33-29.17-25-33.33-4.17 0-12.5 0-16.67 4.16-395.83 125-612.5 545.84-487.5 941.67 75 233.33 254.17 412.5 487.5 487.5 16.67 8.33 33.34 0 37.5-16.67 4.17-4.16 4.17-8.33 4.17-16.66v-58.34c0-12.5-12.5-29.16-25-37.5zM1229.17 295.83c-16.67-8.33-33.34 0-37.5 16.67-4.17 4.17-4.17 8.33-4.17 16.67v58.33c0 16.67 12.5 33.33 25 41.67 325 116.66 491.67 479.16 370.83 800-62.5 175-200 308.33-370.83 370.83-16.67 8.33-25 20.83-25 41.67V1700c0 16.67 8.33 29.17 25 33.33 4.17 0 12.5 0 16.67-4.16 395.83-125 612.5-545.84 487.5-941.67-75-237.5-258.34-416.67-487.5-491.67z"
+        fill="#fff"
+      />
     </svg>
   );
 }
@@ -168,6 +187,8 @@ export async function GET(req: NextRequest) {
     const to = searchParams.get("to") ?? "";
     const dailyLimit = Number(searchParams.get("dailyLimit") ?? "0");
     const dailyUsed = Number(searchParams.get("dailyUsed") ?? "0");
+    const hourlyLimit = Number(searchParams.get("hourlyLimit") ?? "0");
+    const hourlyUsed = Number(searchParams.get("hourlyUsed") ?? "0");
     const onetimeLimit = Number(searchParams.get("onetimeLimit") ?? "0");
 
     const amount = Number(amountRaw);
@@ -175,7 +196,7 @@ export async function GET(req: NextRequest) {
     const truncatedAddr = truncateAddress(to);
     const identicon = generateIdenticonColors(to);
 
-    const checks = buildPolicyChecks({ amount, dailyLimit, dailyUsed, onetimeLimit });
+    const checks = buildPolicyChecks({ amount, dailyLimit, dailyUsed, hourlyLimit, hourlyUsed, onetimeLimit });
     const hasChecks = checks.length > 0;
 
     const fonts = await loadFonts(origin);
@@ -190,93 +211,45 @@ export async function GET(req: NextRequest) {
             flexDirection: "column",
             backgroundColor: "#ffffff",
             fontFamily: "Geist",
+            padding: "20px 24px",
+            justifyContent: "center",
           }}
         >
-          {/* ── Header ── */}
-          <div
-            style={{
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "space-between",
-              padding: "18px 28px",
-              borderBottom: "1px solid #e4e4e7",
-            }}
-          >
-            <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
-              <div
-                style={{
-                  width: 26,
-                  height: 26,
-                  borderRadius: 7,
-                  background: "linear-gradient(135deg, #0d0d0d, #27272a)",
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "center",
-                }}
-              >
-                <ShieldIcon />
-              </div>
-              <span
-                style={{
-                  fontSize: 13,
-                  fontFamily: "IBM Plex Mono",
-                  fontWeight: 600,
-                  color: "#71717a",
-                  letterSpacing: "0.08em",
-                }}
-              >
-                SOLANA ACTION
-              </span>
-            </div>
-            <span
-              style={{
-                fontSize: 13,
-                color: "#a1a1aa",
-                fontFamily: "IBM Plex Mono",
-                fontWeight: 600,
-              }}
-            >
-              agentsafe.app
-            </span>
-          </div>
-
           {/* ── Payment Request ── */}
           <div
             style={{
               display: "flex",
               flexDirection: "column",
-              padding: hasChecks ? "24px 28px 20px" : "32px 28px 28px",
-              flexGrow: hasChecks ? 0 : 1,
             }}
           >
-            <span style={{ fontSize: 13, color: "#71717a", marginBottom: 8 }}>
+            <span style={{ fontSize: 20, color: "#a1a1aa", marginBottom: 4 }}>
               Payment request
             </span>
-            <div style={{ display: "flex", alignItems: "baseline", gap: 10 }}>
+            <div
+              style={{
+                display: "flex",
+                flexDirection: "row",
+                alignItems: "flex-end",
+                gap: 18,
+              }}
+            >
               <span
                 style={{
-                  fontSize: 44,
+                  fontSize: 72,
                   fontFamily: "IBM Plex Mono",
                   fontWeight: 600,
                   color: "#09090b",
                   lineHeight: 1,
-                  letterSpacing: "-0.02em",
+                  letterSpacing: "-2px",
                 }}
               >
                 {displayAmount}
               </span>
-              <div style={{ display: "flex", alignItems: "center", gap: 6 }}>
-                <div
-                  style={{
-                    width: 16,
-                    height: 16,
-                    borderRadius: "50%",
-                    backgroundColor: "#2775ca",
-                  }}
-                />
+              <div style={{ display: "flex", alignItems: "center", gap: 8, paddingBottom: 8 }}>
+                <UsdcLogo />
                 <span
                   style={{
-                    fontSize: 16,
+                    fontSize: 36,
                     fontWeight: 600,
                     color: "#52525b",
                     fontFamily: "IBM Plex Mono",
@@ -293,32 +266,32 @@ export async function GET(req: NextRequest) {
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "space-between",
-                marginTop: 20,
+                marginTop: 16,
               }}
             >
-              <span style={{ fontSize: 14, color: "#71717a" }}>Recipient</span>
+              <span style={{ fontSize: 20, color: "#a1a1aa" }}>Recipient</span>
               <div
                 style={{
                   display: "flex",
                   alignItems: "center",
-                  gap: 8,
+                  gap: 10,
                   backgroundColor: "#fafafa",
-                  borderRadius: 8,
-                  padding: "6px 14px",
+                  borderRadius: 10,
+                  padding: "8px 14px",
                   border: "1px solid #e4e4e7",
                 }}
               >
                 <div
                   style={{
-                    width: 18,
-                    height: 18,
+                    width: 28,
+                    height: 28,
                     borderRadius: "50%",
                     background: `linear-gradient(${identicon.angle}deg, hsl(${identicon.hue1}, 70%, 55%), hsl(${identicon.hue2}, 65%, 50%))`,
                   }}
                 />
                 <span
                   style={{
-                    fontSize: 13,
+                    fontSize: 20,
                     fontFamily: "IBM Plex Mono",
                     fontWeight: 600,
                     color: "#27272a",
@@ -337,18 +310,18 @@ export async function GET(req: NextRequest) {
                 display: "flex",
                 flexDirection: "column",
                 borderTop: "1px solid #e4e4e7",
-                padding: "16px 28px 22px",
-                flexGrow: 1,
+                paddingTop: 14,
+                marginTop: 16,
               }}
             >
               <span
                 style={{
-                  fontSize: 11,
+                  fontSize: 16,
                   fontFamily: "IBM Plex Mono",
                   fontWeight: 600,
                   color: "#a1a1aa",
                   letterSpacing: "0.08em",
-                  marginBottom: 12,
+                  marginBottom: 10,
                 }}
               >
                 POLICY CHECK
@@ -365,11 +338,11 @@ export async function GET(req: NextRequest) {
                     paddingBottom: 8,
                   }}
                 >
-                  <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
                     {check.status === "pass" ? <CheckCircle /> : <AlertCircle />}
                     <span
                       style={{
-                        fontSize: 14,
+                        fontSize: 20,
                         fontWeight: 600,
                         color: "#27272a",
                       }}
@@ -379,7 +352,7 @@ export async function GET(req: NextRequest) {
                   </div>
                   <span
                     style={{
-                      fontSize: 13,
+                      fontSize: 20,
                       fontFamily: "IBM Plex Mono",
                       fontWeight: 600,
                       color: "#a1a1aa",
