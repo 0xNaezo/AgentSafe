@@ -96,6 +96,8 @@ export const GET = async (req: Request) => {
     // Fetch vault state for dynamic policy-check values on the OG image
     let dailyLimit = "0";
     let dailyUsed = "0";
+    let hourlyLimit = "0";
+    let hourlyUsed = "0";
     let onetimeLimit = "0";
 
     const ownerParam = requestUrl.searchParams.get("owner");
@@ -109,21 +111,37 @@ export const GET = async (req: Request) => {
         if (vault) {
           const v = vault as {
             dailyLimit: BN;
+            hourlyLimit: BN;
             onetimeLimit: BN;
             spentToday: BN;
+            spentHour: BN;
             lastResetTime: BN;
           };
 
           // Epoch-aligned lazy-reset (mirrors on-chain logic)
           const now = Math.floor(Date.now() / 1000);
           const SECONDS_PER_DAY = 86_400;
+          const SECONDS_PER_HOUR = 3_600;
           const currentDay = Math.floor(now / SECONDS_PER_DAY);
           const lastDay = Math.floor(v.lastResetTime.toNumber() / SECONDS_PER_DAY);
-          const effectiveDaily = currentDay > lastDay ? 0 : v.spentToday.toNumber();
+          const currentHour = Math.floor(now / SECONDS_PER_HOUR);
+          const lastHour = Math.floor(v.lastResetTime.toNumber() / SECONDS_PER_HOUR);
+          
+          let effectiveDaily = v.spentToday.toNumber();
+          let effectiveHourly = v.spentHour.toNumber();
+
+          if (currentDay > lastDay) {
+            effectiveDaily = 0;
+            effectiveHourly = 0;
+          } else if (currentHour > lastHour) {
+            effectiveHourly = 0;
+          }
 
           const divider = 10 ** TOKEN_DECIMALS;
           dailyLimit = String(v.dailyLimit.toNumber() / divider);
           dailyUsed = String(effectiveDaily / divider);
+          hourlyLimit = String(v.hourlyLimit.toNumber() / divider);
+          hourlyUsed = String(effectiveHourly / divider);
           onetimeLimit = String(v.onetimeLimit.toNumber() / divider);
         }
       } catch (err) {
@@ -136,6 +154,8 @@ export const GET = async (req: Request) => {
     ogUrl.searchParams.set("to", recipient.toBase58());
     ogUrl.searchParams.set("dailyLimit", dailyLimit);
     ogUrl.searchParams.set("dailyUsed", dailyUsed);
+    ogUrl.searchParams.set("hourlyLimit", hourlyLimit);
+    ogUrl.searchParams.set("hourlyUsed", hourlyUsed);
     ogUrl.searchParams.set("onetimeLimit", onetimeLimit);
 
     const payload: ActionGetResponse = {
