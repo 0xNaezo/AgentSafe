@@ -69,7 +69,19 @@ export function ChatMessageBubble({ message }: ChatMessageBubbleProps) {
                     : "prose-zinc mt-2 [&_pre]:bg-zinc-50 [&_pre]:text-zinc-900 [&_pre]:border [&_pre]:border-zinc-200 [&_code]:bg-zinc-100 [&_code]:text-zinc-900"
                 }`}
               >
-                <ReactMarkdown remarkPlugins={[remarkGfm, remarkBreaks]}>
+                <ReactMarkdown
+                  remarkPlugins={[remarkGfm, remarkBreaks]}
+                  components={{
+                    a: ({ node, ...props }) => (
+                      <a
+                        {...props}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="!text-blue-500 hover:!text-blue-600 !underline !decoration-blue-500/30 hover:!decoration-blue-500 transition-colors"
+                      />
+                    ),
+                  }}
+                >
                   {message.body}
                 </ReactMarkdown>
               </div>
