@@ -39,13 +39,7 @@ export function ChatComposer({
     fileInputRef.current?.click();
   }
 
-  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
-    const file = e.target.files?.[0];
-
-    if (!file) {
-      return;
-    }
-
+  function processFile(file: File) {
     if (!file.type.startsWith("image/")) {
       return;
     }
@@ -64,9 +58,34 @@ export function ChatComposer({
     };
 
     reader.readAsDataURL(file);
+  }
+
+  function handleFileChange(e: React.ChangeEvent<HTMLInputElement>) {
+    const file = e.target.files?.[0];
+
+    if (file) {
+      processFile(file);
+    }
 
     // Reset so the same file can be re-selected
     e.target.value = "";
+  }
+
+  function handlePaste(e: React.ClipboardEvent<HTMLTextAreaElement>) {
+    const items = e.clipboardData?.items;
+    if (!items) return;
+
+    for (let i = 0; i < items.length; i++) {
+      const item = items[i];
+      if (item.type.startsWith("image/")) {
+        const file = item.getAsFile();
+        if (file) {
+          processFile(file);
+          e.preventDefault();
+          break;
+        }
+      }
+    }
   }
 
   const hasContent = input.trim().length > 0 || imagePreview !== null;
@@ -121,6 +140,7 @@ export function ChatComposer({
             value={input}
             onChange={(e) => onInputChange(e.target.value)}
             onKeyDown={handleKeyDown}
+            onPaste={handlePaste}
             placeholder="Ask the agent to make a payment..."
             disabled={loading}
             className="flex-1 resize-none overflow-y-auto bg-transparent py-1.5 text-sm leading-6 text-zinc-950 outline-none placeholder:text-zinc-400 disabled:cursor-not-allowed disabled:opacity-50"
