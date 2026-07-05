@@ -2,7 +2,7 @@
 
 > _An On-Chain Policy Vault & Security Layer for Autonomous AI Agents on Solana._
 
-🔴 **Demo Video (YouTube):** [Watch the 3-minute demo](https://youtube.com)  
+🔴 **Demo Video (YouTube):** [Watch the 3-minute demo](https://youtu.be/-5QvDEiumYY)  
 🌐 **Live DApp:** [agentsafe.vercel.app](https://agent-safe.vercel.app/)  
 📜 **Devnet Program ID:** `B6SpUd172qVcLhVfdQCrZLk3zpsuYkJ4ZYtCaoL2Dr2d`
 
