@@ -2,13 +2,13 @@
 
 > _An On-Chain Policy Vault & Security Layer for Autonomous AI Agents on Solana._
 
-🔴 **Demo Video (YouTube):** [Watch the 3-minute demo](https://youtu.be/-5QvDEiumYY)  
-🌐 **Live DApp:** [agentsafe.vercel.app](https://agent-safe.vercel.app/)  
-📜 **Devnet Program ID:** `B6SpUd172qVcLhVfdQCrZLk3zpsuYkJ4ZYtCaoL2Dr2d`
+**Demo Video (YouTube):** [Watch the 3-minute demo](https://youtu.be/-5QvDEiumYY)  
+**Live DApp:** [agentsafe.vercel.app](https://agent-safe.vercel.app/)  
+**Devnet Program ID:** `B6SpUd172qVcLhVfdQCrZLk3zpsuYkJ4ZYtCaoL2Dr2d`
 
 ---
 
-## 🚨 The Problem
+## The Problem
 
 Autonomous AI agents are increasingly being used to perform real financial operations — payments, subscriptions, API purchases. But giving an agent direct access to a private key is a gamble with catastrophic downside:
 
@@ -21,37 +21,19 @@ Autonomous AI agents are increasingly being used to perform real financial opera
 
 ---
 
-## 🛡️ The Solution: AgentSafe
+## The Solution: AgentSafe
 
 AgentSafe is not a wallet. It is a **Policy Engine** implemented as a Solana smart contract.
 
 The vault owner deposits funds into a program-derived account (PDA) and assigns an agent wallet with strict, on-chain spending limits — daily, hourly, and per-transaction. The agent can autonomously execute payments **only within those limits**. Any request that exceeds the one-time limit is automatically escalated to manual owner approval via a Solana Action (Blink) — no context-switching, no separate app.
 
-```mermaid
-flowchart TB
-    Owner["🧑 Vault Owner<br/>(Phantom Wallet)"]
-    Agent["🤖 AI Agent<br/>(Server Keypair)"]
-    Vault["🔒 AgentSafe Program<br/>(Solana PDA)"]
-    TokenAccount["💰 Vault Token Account<br/>(PDA-derived)"]
-    Recipient["📬 Recipient"]
-    Blink["⚡ Dialect Blink<br/>(Owner Approval)"]
-
-    Owner -->|"1. Create vault + set limits"| Vault
-    Owner -->|"2. Deposit USDC"| TokenAccount
-    Agent -->|"3. Request payment"| Vault
-    Vault -->|"4a. Within limits → auto-transfer"| Recipient
-    Vault -->|"4b. Exceeds onetime_limit"| Blink
-    Blink -->|"5. Owner signs ownerForceTransfer"| Vault
-    Vault -->|"6. Transfer approved"| Recipient
-
-    style Vault fill:#1a1a2e,stroke:#e94560,color:#fff
-    style TokenAccount fill:#0f3460,stroke:#e94560,color:#fff
-    style Blink fill:#533483,stroke:#e94560,color:#fff
-```
+<p align="center">
+  <img src="assets/agentsafe-flow.svg" alt="AgentSafe payment flow — on-chain policy vault" width="800">
+</p>
 
 ---
 
-## ✨ Key Features & User Experience
+## Key Features & User Experience
 
 ### 1. On-Chain Policy Enforcement
 
@@ -78,7 +60,7 @@ Even if the agent's server keypair is fully compromised, the attacker can only s
 
 ---
 
-## 🛠️ Under the Hood
+## Under the Hood
 
 ### Smart Contract (Anchor / Rust)
 
@@ -126,7 +108,7 @@ Even if the agent's server keypair is fully compromised, the attacker can only s
 
 ---
 
-## 🏗️ Future Architecture & Scope
+## Future Architecture & Scope
 
 The current Next.js application serves as a **Reference Client** to demonstrate the underlying on-chain policy engine. Future development of the AgentSafe protocol could explore the following architectural expansions:
 
@@ -149,7 +131,7 @@ Developing lightweight endpoints and on-chain query helpers that allow AI agents
 
 ---
 
-## 💻 Running Locally
+## Running Locally
 
 ### Prerequisites
 
@@ -226,7 +208,7 @@ The setup script will:
 
 ---
 
-## 📂 Repository Structure
+## Repository Structure
 
 ```
 agentsafe/

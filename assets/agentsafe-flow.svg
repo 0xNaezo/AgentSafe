@@ -1,0 +1,117 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg viewBox="0 0 1000 620" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="agentsafe-solution-title agentsafe-solution-desc">
+  <title id="agentsafe-solution-title">AgentSafe on-chain policy vault payment flow</title>
+  <desc id="agentsafe-solution-desc">Flowchart showing the owner setting up a Solana policy vault and depositing USDC, the AI agent requesting payments, auto-transfers within limits, and escalation to an owner-signed Blink approval.</desc>
+  <defs>
+    <style>@import url('https://fonts.googleapis.com/css2?family=Instrument+Serif:ital@0;1&amp;family=Geist:wght@400;500;600&amp;family=Geist+Mono:wght@400;500;600&amp;display=swap');</style>
+    <marker id="arrow" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#8f9dbb"/></marker>
+    <marker id="arrow-accent" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#e94560"/></marker>
+    <marker id="arrow-link" markerWidth="8" markerHeight="6" refX="7" refY="3" orient="auto"><polygon points="0 0, 8 3, 0 6" fill="#6a95d8"/></marker>
+  </defs>
+
+  <rect width="100%" height="100%" fill="#1a1a2e"/>
+
+  <!-- Arrows -->
+  <!-- 1 · Owner → Program: create vault + set limits -->
+  <line x1="220" y1="64" x2="460" y2="64" stroke="#8f9dbb" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <line x1="460" y1="64" x2="460" y2="168" stroke="#8f9dbb" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <!-- 2 · Owner → TokenAccount: deposit USDC -->
+  <line x1="140" y1="88" x2="140" y2="168" stroke="#8f9dbb" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <!-- 3 · Agent → Program: request payment -->
+  <line x1="860" y1="88" x2="860" y2="128" stroke="#8f9dbb" stroke-width="1.2"/>
+  <line x1="860" y1="128" x2="540" y2="128" stroke="#8f9dbb" stroke-width="1.2"/>
+  <line x1="540" y1="128" x2="540" y2="168" stroke="#8f9dbb" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <!-- 4 · Program → diamond: check limits -->
+  <line x1="500" y1="232" x2="500" y2="300" stroke="#8f9dbb" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <!-- 4a · YES → auto-transfer (accent, happy path) -->
+  <line x1="580" y1="340" x2="780" y2="340" stroke="#e94560" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+  <!-- 4b · NO → Blink: exceeds onetime limit -->
+  <line x1="500" y1="380" x2="500" y2="460" stroke="#8f9dbb" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <!-- 5 · Blink → Program: owner signs -->
+  <line x1="420" y1="484" x2="300" y2="484" stroke="#8f9dbb" stroke-width="1.2"/>
+  <line x1="300" y1="484" x2="300" y2="180" stroke="#8f9dbb" stroke-width="1.2"/>
+  <line x1="300" y1="180" x2="420" y2="180" stroke="#8f9dbb" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <!-- 6 · Program → Recipient: transfer approved -->
+  <line x1="540" y1="232" x2="700" y2="232" stroke="#8f9dbb" stroke-width="1.2"/>
+  <line x1="700" y1="232" x2="700" y2="316" stroke="#8f9dbb" stroke-width="1.2"/>
+  <line x1="700" y1="316" x2="860" y2="316" stroke="#8f9dbb" stroke-width="1.2" marker-end="url(#arrow)"/>
+
+  <!-- Arrow labels -->
+  <rect x="300" y="44" width="80" height="12" rx="2" fill="#1a1a2e"/>
+  <text x="340" y="53" fill="#8f9dbb" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">CREATE VAULT</text>
+
+  <rect x="148" y="122" width="84" height="12" rx="2" fill="#1a1a2e"/>
+  <text x="190" y="131" fill="#8f9dbb" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">DEPOSIT USDC</text>
+
+  <rect x="652" y="108" width="96" height="12" rx="2" fill="#1a1a2e"/>
+  <text x="700" y="117" fill="#8f9dbb" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">REQUEST PAYMENT</text>
+
+  <rect x="632" y="320" width="96" height="12" rx="2" fill="#1a1a2e"/>
+  <text x="680" y="329" fill="#e94560" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">AUTO-TRANSFER</text>
+
+  <rect x="508" y="414" width="88" height="12" rx="2" fill="#1a1a2e"/>
+  <text x="552" y="423" fill="#8f9dbb" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">EXCEEDS LIMIT</text>
+
+  <rect x="308" y="326" width="72" height="12" rx="2" fill="#1a1a2e"/>
+  <text x="344" y="335" fill="#8f9dbb" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">OWNER SIGNS</text>
+
+  <rect x="708" y="268" width="72" height="12" rx="2" fill="#1a1a2e"/>
+  <text x="744" y="277" fill="#8f9dbb" font-size="8" font-family="'Geist Mono', monospace" text-anchor="middle" letter-spacing="0.06em">TRANSFER OK</text>
+
+  <!-- Nodes -->
+  <!-- Vault Owner (input) -->
+  <rect x="60" y="40" width="160" height="48" rx="6" fill="rgba(143,157,187,0.10)" stroke="#6b7895" stroke-width="1"/>
+  <text x="140" y="68" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Vault Owner</text>
+  <text x="140" y="80" fill="#8f9dbb" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Phantom Wallet</text>
+
+  <!-- AI Agent (input) -->
+  <rect x="780" y="40" width="160" height="48" rx="6" fill="rgba(143,157,187,0.10)" stroke="#6b7895" stroke-width="1"/>
+  <text x="860" y="68" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">AI Agent</text>
+  <text x="860" y="80" fill="#8f9dbb" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Server Keypair</text>
+
+  <!-- Vault Token Account (store) -->
+  <rect x="60" y="168" width="160" height="48" rx="6" fill="rgba(245,245,245,0.05)" stroke="#8f9dbb" stroke-width="1"/>
+  <text x="140" y="196" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Vault Token Account</text>
+  <text x="140" y="208" fill="#8f9dbb" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">PDA-derived</text>
+
+  <!-- AgentSafe Program (focal) -->
+  <rect x="420" y="168" width="160" height="64" rx="6" fill="rgba(233,69,96,0.12)" stroke="#e94560" stroke-width="1.2"/>
+  <text x="500" y="204" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">AgentSafe Program</text>
+  <text x="500" y="216" fill="#8f9dbb" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">Solana PDA</text>
+
+  <!-- Decision: within limits? -->
+  <polygon points="500,300 580,340 500,380 420,340" fill="#0f3460" stroke="#f5f5f5" stroke-width="1"/>
+  <text x="500" y="344" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Within limits?</text>
+
+  <!-- Recipient (external) -->
+  <rect x="780" y="316" width="160" height="48" rx="6" fill="rgba(245,245,245,0.03)" stroke="rgba(245,245,245,0.30)" stroke-width="1"/>
+  <text x="860" y="344" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Recipient</text>
+  <text x="860" y="356" fill="#8f9dbb" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">beneficiary wallet</text>
+
+  <!-- Dialect Blink (external) -->
+  <rect x="420" y="460" width="160" height="48" rx="6" fill="rgba(245,245,245,0.03)" stroke="rgba(245,245,245,0.30)" stroke-width="1"/>
+  <text x="500" y="488" fill="#f5f5f5" font-size="12" font-weight="600" font-family="'Geist', sans-serif" text-anchor="middle">Dialect Blink</text>
+  <text x="500" y="500" fill="#8f9dbb" font-size="9" font-family="'Geist Mono', monospace" text-anchor="middle">owner approval</text>
+
+  <!-- Legend -->
+  <line x1="40" y1="552" x2="960" y2="552" stroke="rgba(245,245,245,0.10)" stroke-width="0.8"/>
+  <text x="40" y="568" fill="#8f9dbb" font-size="8" font-family="'Geist Mono', monospace" letter-spacing="0.18em">LEGEND</text>
+
+  <rect x="40" y="584" width="20" height="12" rx="2" fill="rgba(233,69,96,0.12)" stroke="#e94560" stroke-width="1"/>
+  <text x="68" y="592" fill="#8f9dbb" font-size="8" font-family="'Geist', sans-serif">Policy vault</text>
+
+  <rect x="220" y="584" width="20" height="12" rx="2" fill="rgba(245,245,245,0.05)" stroke="#8f9dbb" stroke-width="1"/>
+  <text x="248" y="592" fill="#8f9dbb" font-size="8" font-family="'Geist', sans-serif">Token account</text>
+
+  <polygon points="392,590 404,584 416,590 404,596" fill="#0f3460" stroke="#f5f5f5" stroke-width="1"/>
+  <text x="424" y="592" fill="#8f9dbb" font-size="8" font-family="'Geist', sans-serif">Decision</text>
+
+  <rect x="560" y="584" width="20" height="12" rx="2" fill="rgba(245,245,245,0.03)" stroke="rgba(245,245,245,0.30)" stroke-width="1"/>
+  <text x="588" y="592" fill="#8f9dbb" font-size="8" font-family="'Geist', sans-serif">External</text>
+
+  <line x1="700" y1="590" x2="732" y2="590" stroke="#e94560" stroke-width="1.4" marker-end="url(#arrow-accent)"/>
+  <text x="740" y="592" fill="#8f9dbb" font-size="8" font-family="'Geist', sans-serif">Auto-pay</text>
+
+  <line x1="840" y1="590" x2="872" y2="590" stroke="#8f9dbb" stroke-width="1.2" marker-end="url(#arrow)"/>
+  <text x="880" y="592" fill="#8f9dbb" font-size="8" font-family="'Geist', sans-serif">Escalation</text>
+</svg>
